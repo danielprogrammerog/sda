@@ -1,228 +1,368 @@
--- Bedwars Script mit Onion Labs UI
--- Onion Library laden
-local Onion = loadstring(game:HttpGet("https://raw.githubusercontent.com/OnionUI/Onion/main/source"))()
+-- ONION LABS UI - BEDWARS SCRIPT
+-- Korrekter Onion Labs Loadstring
 
--- ========== ONION WINDOW ERSTELLEN ==========
-local Window = Onion:CreateWindow({
-    Name = "Bedwars X",
-    Center = true,
-    Size = UDim2.new(0, 500, 0, 550),
-    Theme = "Dark", -- Dark / Light
-    Draggable = true
-})
+local Onion = nil
 
--- Tabs
-local CombatTab = Window:CreateTab("⚔️ Combat")
-local MovementTab = Window:CreateTab("🏃 Movement")
-local RenderTab = Window:CreateTab("🎨 Render")
-local AutoBuyTab = Window:CreateTab("🛒 AutoBuy")
-local UtilityTab = Window:CreateTab("🛠️ Utility")
-local ConfigTab = Window:CreateTab("💾 Config")
+-- Onion Labs korrekt laden
+local Success, Error = pcall(function()
+    Onion = loadstring(game:HttpGet("https://raw.githubusercontent.com/OnionUI/Onion/main/source"))()
+end)
 
--- ========== SECTIONS ==========
-local CombatSection = CombatTab:CreateSection("Kampf Einstellungen")
-local MovementSection = MovementTab:CreateSection("Bewegung")
-local RenderSection = RenderTab:CreateSection("Visuals")
-local AutoBuySection = AutoBuyTab:CreateSection("Auto-Kauf")
-local UtilitySection = UtilityTab:CreateSection("Utility")
-local ConfigSection = ConfigTab:CreateSection("Config")
-
--- ========== STANDARDWERTE ==========
-_G.KillAuraEnabled = false
-_G.KillAuraRadius = 20
-_G.KillAuraDepth = 8
-_G.KillAuraDelay = 0.1
-_G.AutoClickerEnabled = false
-_G.FlyEnabled = false
-_G.SpeedEnabled = false
-_G.SpiderEnabled = false
-_G.ESPEnabled = false
-_G.FullbrightEnabled = false
-_G.ChamsEnabled = false
-_G.AutoBuyEnabled = false
-_G.AutoBuyRange = 15
-_G.AntiVoidEnabled = false
-_G.AutoLeaveEnabled = false
-
--- AutoBuy Status
-_G.OwnedStoneSword = false
-_G.OwnedLeatherHelmet = false
-_G.OwnedLeatherChestplate = false
-_G.OwnedLeatherBoots = false
-
--- ========== UI ELEMENTE ==========
--- Combat Tab
-CombatSection:CreateToggle({
-    Name = "Kill Aura",
-    CurrentValue = false,
-    Callback = function(Value)
-        _G.KillAuraEnabled = Value
+if not Success or not Onion then
+    -- Fallback: Versuche alternative Onion URL
+    local Success2, Error2 = pcall(function()
+        Onion = loadstring(game:HttpGet("https://raw.githubusercontent.com/OnionUI/Onion/master/source.lua"))()
+    end)
+    
+    if not Success2 or not Onion then
+        -- Wenn Onion nicht lädt, benachrichtigen
+        game:GetService("StarterGui"):SetCore("SendNotification", {
+            Title = "Onion Labs Fehler",
+            Text = "Konnte Onion nicht laden. Verwende trotzdem alle Features (Hotkeys F6-F11)",
+            Duration = 5
+        })
+        
+        -- Erstelle trotzdem ein einfaches GUI
+        local screenGui = Instance.new("ScreenGui")
+        screenGui.Name = "BedwarsGUI"
+        screenGui.Parent = game:GetService("PlayerGui").LocalPlayer
+        
+        local mainFrame = Instance.new("Frame")
+        mainFrame.Size = UDim2.new(0, 400, 0, 500)
+        mainFrame.Position = UDim2.new(0.5, -200, 0.5, -250)
+        mainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
+        mainFrame.BackgroundTransparency = 0.1
+        mainFrame.BorderSizePixel = 0
+        mainFrame.Active = true
+        mainFrame.Draggable = true
+        mainFrame.Parent = screenGui
+        
+        local title = Instance.new("TextLabel")
+        title.Size = UDim2.new(1, 0, 0, 50)
+        title.Text = "⚔️ BEDWARS SCRIPT ⚔️"
+        title.TextColor3 = Color3.fromRGB(255, 100, 100)
+        title.BackgroundTransparency = 1
+        title.Font = Enum.Font.GothamBold
+        title.TextSize = 22
+        title.Parent = mainFrame
+        
+        local subtitle = Instance.new("TextLabel")
+        subtitle.Size = UDim2.new(1, 0, 0, 25)
+        subtitle.Position = UDim2.new(0, 0, 0, 45)
+        subtitle.Text = "Onion Labs nicht verfügbar | Hotkeys: F5=GUI F6=KillAura F7=AutoBuy F8=Fly F9=Speed F10=ESP F11=Fullbright"
+        subtitle.TextColor3 = Color3.fromRGB(150, 150, 150)
+        subtitle.BackgroundTransparency = 1
+        subtitle.Font = Enum.Font.Gotham
+        subtitle.TextSize = 11
+        subtitle.Parent = mainFrame
+        
+        local closeBtn = Instance.new("TextButton")
+        closeBtn.Size = UDim2.new(0, 30, 0, 30)
+        closeBtn.Position = UDim2.new(1, -35, 0, 5)
+        closeBtn.Text = "✕"
+        closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+        closeBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+        closeBtn.Font = Enum.Font.GothamBold
+        closeBtn.TextSize = 18
+        closeBtn.Parent = mainFrame
+        
+        closeBtn.MouseButton1Click:Connect(function()
+            mainFrame.Visible = not mainFrame.Visible
+        end)
+        
+        _G.OnionFallback = true
+        _G.OnionFrame = mainFrame
     end
-})
+end
 
-CombatSection:CreateSlider({
-    Name = "Kill Aura Radius",
-    Min = 5,
-    Max = 30,
-    Default = 20,
-    Suffix = "s",
-    Callback = function(Value)
-        _G.KillAuraRadius = Value
-    end
-})
-
-CombatSection:CreateSlider({
-    Name = "Kill Aura Tiefe (Y-Achse)",
-    Min = 2,
-    Max = 15,
-    Default = 8,
-    Suffix = "s",
-    Callback = function(Value)
-        _G.KillAuraDepth = Value
-    end
-})
-
-CombatSection:CreateSlider({
-    Name = "Angriffsverzögerung",
-    Min = 0.05,
-    Max = 0.5,
-    Default = 0.1,
-    Suffix = "s",
-    Callback = function(Value)
-        _G.KillAuraDelay = Value
-    end
-})
-
-CombatSection:CreateToggle({
-    Name = "AutoClicker (15 CPS)",
-    CurrentValue = false,
-    Callback = function(Value)
-        _G.AutoClickerEnabled = Value
-    end
-})
-
--- Movement Tab
-MovementSection:CreateToggle({
-    Name = "Fly (NCP Bypass)",
-    CurrentValue = false,
-    Callback = function(Value)
-        _G.FlyEnabled = Value
-    end
-})
-
-MovementSection:CreateToggle({
-    Name = "Speed (50 Walkspeed)",
-    CurrentValue = false,
-    Callback = function(Value)
-        _G.SpeedEnabled = Value
-    end
-})
-
-MovementSection:CreateToggle({
-    Name = "Spider (Wall Climb)",
-    CurrentValue = false,
-    Callback = function(Value)
-        _G.SpiderEnabled = Value
-    end
-})
-
--- Render Tab
-RenderSection:CreateToggle({
-    Name = "ESP (Nametags + Box)",
-    CurrentValue = false,
-    Callback = function(Value)
-        _G.ESPEnabled = Value
-    end
-})
-
-RenderSection:CreateToggle({
-    Name = "Fullbright",
-    CurrentValue = false,
-    Callback = function(Value)
-        _G.FullbrightEnabled = Value
-    end
-})
-
-RenderSection:CreateToggle({
-    Name = "Chams (Player Glow)",
-    CurrentValue = false,
-    Callback = function(Value)
-        _G.ChamsEnabled = Value
-    end
-})
-
--- AutoBuy Tab
-AutoBuySection:CreateToggle({
-    Name = "AutoBuy aktivieren",
-    CurrentValue = false,
-    Callback = function(Value)
-        _G.AutoBuyEnabled = Value
-        if Value then
+-- Wenn Onion erfolgreich geladen wurde
+if Onion then
+    _G.OnionFallback = false
+    
+    -- Onion Window erstellen
+    local Window = Onion:CreateWindow({
+        Name = "⚔️ BEDWARS X ⚔️",
+        Center = true,
+        Size = UDim2.new(0, 520, 0, 580),
+        Theme = "Dark",
+        Draggable = true,
+        Minimizable = true
+    })
+    
+    -- ========== TABS ==========
+    local MainTab = Window:CreateTab("🏠 Main")
+    local CombatTab = Window:CreateTab("⚔️ Combat")
+    local MovementTab = Window:CreateTab("🏃 Movement")
+    local VisualTab = Window:CreateTab("👁️ Visuals")
+    local AutoBuyTab = Window:CreateTab("🛒 AutoBuy")
+    local UtilityTab = Window:CreateTab("🛠️ Utility")
+    local SettingsTab = Window:CreateTab("⚙️ Settings")
+    
+    -- ========== MAIN TAB ==========
+    local MainSection = MainTab:CreateSection("📊 Status")
+    
+    MainSection:CreateLabel("Willkommen beim Bedwars Script!")
+    MainSection:CreateLabel("Alle Features sind über die Tabs erreichbar")
+    MainSection:CreateLabel("Hotkeys: F5 = UI umschalten")
+    MainSection:CreateLabel("")
+    MainSection:CreateLabel("📌 Aktive Features:")
+    MainSection:CreateLabel("  • Kill Aura (Radius/Tiefe einstellbar)")
+    MainSection:CreateLabel("  • AutoClicker (15 CPS)")
+    MainSection:CreateLabel("  • Fly (NCP Bypass)")
+    MainSection:CreateLabel("  • Speed (50 Walkspeed)")
+    MainSection:CreateLabel("  • Spider (Wall Climb)")
+    MainSection:CreateLabel("  • ESP (Nametags + Box)")
+    MainSection:CreateLabel("  • Fullbright")
+    MainSection:CreateLabel("  • Chams (Player Glow)")
+    MainSection:CreateLabel("  • AutoBuy (Schwert + Rüstung)")
+    MainSection:CreateLabel("  • AntiVoid")
+    MainSection:CreateLabel("  • Auto Leave")
+    
+    -- ========== COMBAT TAB ==========
+    local CombatSection = CombatTab:CreateSection("🗡️ Kill Aura")
+    
+    CombatSection:CreateToggle({
+        Name = "Kill Aura aktivieren",
+        CurrentValue = false,
+        Callback = function(Value)
+            _G.KillAuraEnabled = Value
+            Onion:Notify("Kill Aura " .. (Value and "aktiviert" or "deaktiviert"), "Combat")
+        end
+    })
+    
+    CombatSection:CreateSlider({
+        Name = "Kill Aura Radius",
+        Min = 5,
+        Max = 30,
+        Default = 20,
+        Suffix = " Studs",
+        Callback = function(Value)
+            _G.KillAuraRadius = Value
+        end
+    })
+    
+    CombatSection:CreateSlider({
+        Name = "Kill Aura Tiefe (Y-Achse)",
+        Min = 2,
+        Max = 15,
+        Default = 8,
+        Suffix = " Studs",
+        Callback = function(Value)
+            _G.KillAuraDepth = Value
+        end
+    })
+    
+    CombatSection:CreateSlider({
+        Name = "Angriffsverzögerung",
+        Min = 0.05,
+        Max = 0.5,
+        Default = 0.1,
+        Suffix = " Sekunden",
+        Callback = function(Value)
+            _G.KillAuraDelay = Value
+        end
+    })
+    
+    CombatSection:CreateDivider()
+    
+    local AutoClickerSection = CombatTab:CreateSection("🖱️ AutoClicker")
+    
+    AutoClickerSection:CreateToggle({
+        Name = "AutoClicker (15 CPS)",
+        CurrentValue = false,
+        Callback = function(Value)
+            _G.AutoClickerEnabled = Value
+            Onion:Notify("AutoClicker " .. (Value and "aktiviert" or "deaktiviert"), "Combat")
+        end
+    })
+    
+    -- ========== MOVEMENT TAB ==========
+    local MovementSection = MovementTab:CreateSection("🕊️ Flight")
+    
+    MovementSection:CreateToggle({
+        Name = "Fly (NCP Bypass)",
+        CurrentValue = false,
+        Callback = function(Value)
+            _G.FlyEnabled = Value
+            Onion:Notify("Fly " .. (Value and "aktiviert" or "deaktiviert"), "Movement")
+        end
+    })
+    
+    MovementSection:CreateDivider()
+    
+    local SpeedSection = MovementTab:CreateSection("💨 Speed")
+    
+    SpeedSection:CreateToggle({
+        Name = "Speed (50 Walkspeed)",
+        CurrentValue = false,
+        Callback = function(Value)
+            _G.SpeedEnabled = Value
+            Onion:Notify("Speed " .. (Value and "aktiviert" or "deaktiviert"), "Movement")
+        end
+    })
+    
+    MovementSection:CreateDivider()
+    
+    local SpiderSection = MovementTab:CreateSection("🕷️ Spider")
+    
+    SpiderSection:CreateToggle({
+        Name = "Spider (Wall Climb)",
+        CurrentValue = false,
+        Callback = function(Value)
+            _G.SpiderEnabled = Value
+            Onion:Notify("Spider " .. (Value and "aktiviert" or "deaktiviert"), "Movement")
+        end
+    })
+    
+    -- ========== VISUAL TAB ==========
+    local ESP_Section = VisualTab:CreateSection("👁️ ESP")
+    
+    ESP_Section:CreateToggle({
+        Name = "ESP (Nametags + Box)",
+        CurrentValue = false,
+        Callback = function(Value)
+            _G.ESPEnabled = Value
+            Onion:Notify("ESP " .. (Value and "aktiviert" or "deaktiviert"), "Visuals")
+        end
+    })
+    
+    ESP_Section:CreateDivider()
+    
+    local BrightSection = VisualTab:CreateSection("💡 Brightness")
+    
+    BrightSection:CreateToggle({
+        Name = "Fullbright",
+        CurrentValue = false,
+        Callback = function(Value)
+            _G.FullbrightEnabled = Value
+            Onion:Notify("Fullbright " .. (Value and "aktiviert" or "deaktiviert"), "Visuals")
+        end
+    })
+    
+    ESP_Section:CreateDivider()
+    
+    local ChamsSection = VisualTab:CreateSection("✨ Chams")
+    
+    ChamsSection:CreateToggle({
+        Name = "Chams (Player Glow)",
+        CurrentValue = false,
+        Callback = function(Value)
+            _G.ChamsEnabled = Value
+            Onion:Notify("Chams " .. (Value and "aktiviert" or "deaktiviert"), "Visuals")
+        end
+    })
+    
+    -- ========== AUTOBUY TAB ==========
+    local AutoBuySection = AutoBuyTab:CreateSection("🛒 AutoBuy Einstellungen")
+    
+    AutoBuySection:CreateToggle({
+        Name = "AutoBuy aktivieren",
+        CurrentValue = false,
+        Callback = function(Value)
+            _G.AutoBuyEnabled = Value
+            if Value then
+                _G.OwnedStoneSword = false
+                _G.OwnedLeatherHelmet = false
+                _G.OwnedLeatherChestplate = false
+                _G.OwnedLeatherBoots = false
+            end
+            Onion:Notify("AutoBuy " .. (Value and "aktiviert" or "deaktiviert"), "AutoBuy")
+        end
+    })
+    
+    AutoBuySection:CreateSlider({
+        Name = "Shop Reichweite",
+        Min = 5,
+        Max = 30,
+        Default = 15,
+        Suffix = " Studs",
+        Callback = function(Value)
+            _G.AutoBuyRange = Value
+        end
+    })
+    
+    AutoBuySection:CreateDivider()
+    
+    AutoBuySection:CreateLabel("📦 Gekaufte Items:")
+    AutoBuySection:CreateLabel("  • Steinschwert (20 Eisen)")
+    AutoBuySection:CreateLabel("  • Lederhelm (50 Eisen)")
+    AutoBuySection:CreateLabel("  • Lederbrustplatte (50 Eisen)")
+    AutoBuySection:CreateLabel("  • Lederstiefel (50 Eisen)")
+    
+    AutoBuySection:CreateDivider()
+    
+    AutoBuySection:CreateButton({
+        Name = "🔄 Reset Gekauft-Status",
+        Callback = function()
             _G.OwnedStoneSword = false
             _G.OwnedLeatherHelmet = false
             _G.OwnedLeatherChestplate = false
             _G.OwnedLeatherBoots = false
+            Onion:Notify("Status zurückgesetzt! Items können erneut gekauft werden", "AutoBuy")
         end
-    end
-})
+    })
+    
+    -- ========== UTILITY TAB ==========
+    local AntiVoidSection = UtilityTab:CreateSection("🛡️ Schutz")
+    
+    AntiVoidSection:CreateToggle({
+        Name = "AntiVoid (Reset bei Y<0)",
+        CurrentValue = false,
+        Callback = function(Value)
+            _G.AntiVoidEnabled = Value
+            Onion:Notify("AntiVoid " .. (Value and "aktiviert" or "deaktiviert"), "Utility")
+        end
+    })
+    
+    AntiVoidSection:CreateDivider()
+    
+    local LeaveSection = UtilityTab:CreateSection("🚪 Auto Leave")
+    
+    LeaveSection:CreateToggle({
+        Name = "Auto Leave (bei Tod)",
+        CurrentValue = false,
+        Callback = function(Value)
+            _G.AutoLeaveEnabled = Value
+            Onion:Notify("Auto Leave " .. (Value and "aktiviert" or "deaktiviert"), "Utility")
+        end
+    })
+    
+    -- ========== SETTINGS TAB ==========
+    local ConfigSection = SettingsTab:CreateSection("💾 Config")
+    
+    ConfigSection:CreateButton({
+        Name = "💾 Config Speichern",
+        Callback = function()
+            Onion:SaveConfig()
+            Onion:Notify("Config gespeichert!", "Settings")
+        end
+    })
+    
+    ConfigSection:CreateButton({
+        Name = "📂 Config Laden",
+        Callback = function()
+            Onion:LoadConfig()
+            Onion:Notify("Config geladen!", "Settings")
+        end
+    })
+    
+    ConfigSection:CreateDivider()
+    
+    local HotkeySection = SettingsTab:CreateSection("⌨️ Hotkeys")
+    
+    HotkeySection:CreateLabel("F5 - UI ein-/ausblenden")
+    HotkeySection:CreateLabel("F6 - Kill Aura ein-/aus")
+    HotkeySection:CreateLabel("F7 - AutoBuy ein-/aus")
+    HotkeySection:CreateLabel("F8 - Fly ein-/aus")
+    HotkeySection:CreateLabel("F9 - Speed ein-/aus")
+    HotkeySection:CreateLabel("F10 - ESP ein-/aus")
+    HotkeySection:CreateLabel("F11 - Fullbright ein-/aus")
+    
+    -- Start-Notiz
+    Onion:Notify("Bedwars Script geladen! Drücke F5 für UI", "Willkommen")
+end
 
-AutoBuySection:CreateSlider({
-    Name = "Shop Reichweite",
-    Min = 5,
-    Max = 30,
-    Default = 15,
-    Suffix = "s",
-    Callback = function(Value)
-        _G.AutoBuyRange = Value
-    end
-})
-
-AutoBuySection:CreateButton({
-    Name = "Reset Gekauft-Status",
-    Callback = function()
-        _G.OwnedStoneSword = false
-        _G.OwnedLeatherHelmet = false
-        _G.OwnedLeatherChestplate = false
-        _G.OwnedLeatherBoots = false
-        Onion:Notify("Status zurückgesetzt!", "AutoBuy")
-    end
-})
-
--- Utility Tab
-UtilitySection:CreateToggle({
-    Name = "AntiVoid (Reset bei Y<0)",
-    CurrentValue = false,
-    Callback = function(Value)
-        _G.AntiVoidEnabled = Value
-    end
-})
-
-UtilitySection:CreateToggle({
-    Name = "Auto Leave (bei Tod)",
-    CurrentValue = false,
-    Callback = function(Value)
-        _G.AutoLeaveEnabled = Value
-    end
-})
-
--- Config Tab
-ConfigSection:CreateButton({
-    Name = "Config Speichern",
-    Callback = function()
-        Onion:SaveConfig()
-        Onion:Notify("Config gespeichert!", "Config")
-    end
-})
-
-ConfigSection:CreateButton({
-    Name = "Config Laden",
-    Callback = function()
-        Onion:LoadConfig()
-        Onion:Notify("Config geladen!", "Config")
-    end
-})
-
--- ========== SERVICES ==========
+-- ========== HAUPTFUNKTIONEN (immer aktiv) ==========
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local RunService = game:GetService("RunService")
@@ -232,7 +372,28 @@ local UserInputService = game:GetService("UserInputService")
 local Lighting = game:GetService("Lighting")
 local TeleportService = game:GetService("TeleportService")
 
--- ========== NETWORK PFADE ==========
+-- Standardwerte setzen
+_G.KillAuraEnabled = _G.KillAuraEnabled or false
+_G.KillAuraRadius = _G.KillAuraRadius or 20
+_G.KillAuraDepth = _G.KillAuraDepth or 8
+_G.KillAuraDelay = _G.KillAuraDelay or 0.1
+_G.AutoClickerEnabled = _G.AutoClickerEnabled or false
+_G.FlyEnabled = _G.FlyEnabled or false
+_G.SpeedEnabled = _G.SpeedEnabled or false
+_G.SpiderEnabled = _G.SpiderEnabled or false
+_G.ESPEnabled = _G.ESPEnabled or false
+_G.FullbrightEnabled = _G.FullbrightEnabled or false
+_G.ChamsEnabled = _G.ChamsEnabled or false
+_G.AutoBuyEnabled = _G.AutoBuyEnabled or false
+_G.AutoBuyRange = _G.AutoBuyRange or 15
+_G.AntiVoidEnabled = _G.AntiVoidEnabled or false
+_G.AutoLeaveEnabled = _G.AutoLeaveEnabled or false
+_G.OwnedStoneSword = _G.OwnedStoneSword or false
+_G.OwnedLeatherHelmet = _G.OwnedLeatherHelmet or false
+_G.OwnedLeatherChestplate = _G.OwnedLeatherChestplate or false
+_G.OwnedLeatherBoots = _G.OwnedLeatherBoots or false
+
+-- Network Pfade
 local SwordHit, SwordSwingMiss, BedwarsPurchaseItem
 
 pcall(function()
@@ -242,7 +403,7 @@ pcall(function()
     BedwarsPurchaseItem = NetManaged:WaitForChild("BedwarsPurchaseItem")
 end)
 
--- ========== WEAPON FINDEN ==========
+-- Weapon finden
 local function GetCurrentWeapon()
     local char = LocalPlayer.Character
     if not char then return nil end
@@ -250,22 +411,21 @@ local function GetCurrentWeapon()
     local inventory = LocalPlayer:FindFirstChild("Inventory")
     if inventory then
         for _, item in pairs(inventory:GetChildren()) do
-            if item:IsA("Tool") and (item.Name:find("sword") or item.Name:find("Sword")) then
+            if item:IsA("Tool") and (item.Name:lower():find("sword")) then
                 return item
             end
         end
     end
     
     for _, item in pairs(char:GetChildren()) do
-        if item:IsA("Tool") and (item.Name:find("sword") or item.Name:find("Sword")) then
+        if item:IsA("Tool") and (item.Name:lower():find("sword")) then
             return item
         end
     end
-    
     return nil
 end
 
--- ========== KILL AURA ==========
+-- Kill Aura
 local function GetClosestEnemy()
     if not LocalPlayer.Character then return nil end
     local hrp = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
@@ -276,8 +436,7 @@ local function GetClosestEnemy()
     
     for _, player in pairs(Players:GetPlayers()) do
         if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("Humanoid") then
-            local humanoid = player.Character.Humanoid
-            if humanoid.Health > 0 then
+            if player.Character.Humanoid.Health > 0 then
                 local targetHrp = player.Character:FindFirstChild("HumanoidRootPart")
                 if targetHrp then
                     local dist = (hrp.Position - targetHrp.Position).Magnitude
@@ -302,7 +461,7 @@ task.spawn(function()
             local weapon = GetCurrentWeapon()
             local target = GetClosestEnemy()
             
-            if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") and weapon then
+            if target and target.Character and weapon then
                 pcall(function()
                     local args = {{
                         chargedAttack = { chargeRatio = 0 },
@@ -325,7 +484,7 @@ task.spawn(function()
     end
 end)
 
--- ========== AUTO CLICKER ==========
+-- AutoClicker
 task.spawn(function()
     while true do
         task.wait(1/15)
@@ -335,7 +494,7 @@ task.spawn(function()
     end
 end)
 
--- ========== FLY ==========
+-- Fly
 local FlyBV = nil
 local FlyConnection = nil
 
@@ -347,41 +506,37 @@ local function StopFly()
     end
 end
 
-local function StartFly()
-    StopFly()
-    if not LocalPlayer.Character then return end
-    local humanoid = LocalPlayer.Character:FindFirstChild("Humanoid")
-    if humanoid then humanoid.PlatformStand = true end
-    
-    FlyBV = Instance.new("BodyVelocity")
-    FlyBV.MaxForce = Vector3.new(1e9, 1e9, 1e9)
-    FlyBV.Parent = LocalPlayer.Character
-    
-    FlyConnection = RunService.RenderStepped:Connect(function()
-        if not _G.FlyEnabled or not LocalPlayer.Character then StopFly(); return end
-        local move = Vector3.new()
-        if UserInputService:IsKeyDown(Enum.KeyCode.W) then move = move + Vector3.new(1, 0, 0) end
-        if UserInputService:IsKeyDown(Enum.KeyCode.S) then move = move - Vector3.new(1, 0, 0) end
-        if UserInputService:IsKeyDown(Enum.KeyCode.D) then move = move + Vector3.new(0, 0, 1) end
-        if UserInputService:IsKeyDown(Enum.KeyCode.A) then move = move - Vector3.new(0, 0, 1) end
-        if UserInputService:IsKeyDown(Enum.KeyCode.Space) then move = move + Vector3.new(0, 1, 0) end
-        if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then move = move - Vector3.new(0, 1, 0) end
-        FlyBV.Velocity = move * 50
-    end)
-end
-
 task.spawn(function()
     while true do
-        task.wait(0.5)
-        if _G.FlyEnabled then
-            if not FlyBV or not FlyBV.Parent then StartFly() end
-        else
+        task.wait(0.3)
+        if _G.FlyEnabled and LocalPlayer.Character then
+            if not FlyBV then
+                local humanoid = LocalPlayer.Character:FindFirstChild("Humanoid")
+                if humanoid then humanoid.PlatformStand = true end
+                
+                FlyBV = Instance.new("BodyVelocity")
+                FlyBV.MaxForce = Vector3.new(1e9, 1e9, 1e9)
+                FlyBV.Parent = LocalPlayer.Character
+                
+                FlyConnection = RunService.RenderStepped:Connect(function()
+                    if not _G.FlyEnabled or not LocalPlayer.Character then StopFly(); return end
+                    local move = Vector3.new()
+                    if UserInputService:IsKeyDown(Enum.KeyCode.W) then move = move + Vector3.new(1, 0, 0) end
+                    if UserInputService:IsKeyDown(Enum.KeyCode.S) then move = move - Vector3.new(1, 0, 0) end
+                    if UserInputService:IsKeyDown(Enum.KeyCode.D) then move = move + Vector3.new(0, 0, 1) end
+                    if UserInputService:IsKeyDown(Enum.KeyCode.A) then move = move - Vector3.new(0, 0, 1) end
+                    if UserInputService:IsKeyDown(Enum.KeyCode.Space) then move = move + Vector3.new(0, 1, 0) end
+                    if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then move = move - Vector3.new(0, 1, 0) end
+                    if FlyBV then FlyBV.Velocity = move * 50 end
+                end)
+            end
+        elseif not _G.FlyEnabled then
             StopFly()
         end
     end
 end)
 
--- ========== SPEED ==========
+-- Speed
 task.spawn(function()
     while true do
         task.wait(0.3)
@@ -396,10 +551,10 @@ task.spawn(function()
     end
 end)
 
--- ========== SPIDER ==========
+-- Spider
 task.spawn(function()
     while true do
-        task.wait()
+        task.wait(0.05)
         if _G.SpiderEnabled and LocalPlayer.Character then
             local humanoid = LocalPlayer.Character:FindFirstChild("Humanoid")
             local hrp = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
@@ -410,20 +565,16 @@ task.spawn(function()
                 hrp.Velocity = hrp.Velocity + Vector3.new(0, 0.1, 0)
             end
         end
-        task.wait(0.05)
     end
 end)
 
--- ========== ESP ==========
+-- ESP
 local ESPObjects = {}
-local function ClearESP()
-    for _, obj in pairs(ESPObjects) do pcall(function() obj:Destroy() end) end
-    ESPObjects = {}
-end
-
 task.spawn(function()
     while true do
-        ClearESP()
+        for _, obj in pairs(ESPObjects) do pcall(function() obj:Destroy() end) end
+        ESPObjects = {}
+        
         if _G.ESPEnabled and Workspace.CurrentCamera and LocalPlayer.Character then
             local localHrp = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
             if localHrp then
@@ -442,6 +593,7 @@ task.spawn(function()
                                 text.Position = Vector2.new(pos.X, pos.Y - 30)
                                 text.Visible = true
                                 table.insert(ESPObjects, text)
+                                
                                 local box = Drawing.new("Square")
                                 box.Color = Color3.new(1, 0, 0)
                                 box.Thickness = 2
@@ -460,8 +612,10 @@ task.spawn(function()
     end
 end)
 
--- ========== FULLBRIGHT ==========
+-- Fullbright
 task.spawn(function()
+    local origAmbient = Lighting.Ambient
+    local origBrightness = Lighting.Brightness
     while true do
         task.wait(0.3)
         if _G.FullbrightEnabled then
@@ -469,27 +623,24 @@ task.spawn(function()
             Lighting.Brightness = 2
             Lighting.ClockTime = 12
         else
-            Lighting.Ambient = Color3.new(0, 0, 0)
-            Lighting.Brightness = 1
+            Lighting.Ambient = origAmbient
+            Lighting.Brightness = origBrightness
         end
     end
 end)
 
--- ========== CHAMS ==========
+-- Chams
 local ChamsHighlights = {}
-local function ClearChams()
-    for _, h in pairs(ChamsHighlights) do pcall(function() h:Destroy() end) end
-    ChamsHighlights = {}
-end
-
 task.spawn(function()
     while true do
-        ClearChams()
+        for _, h in pairs(ChamsHighlights) do pcall(function() h:Destroy() end) end
+        ChamsHighlights = {}
+        
         if _G.ChamsEnabled then
             for _, player in pairs(Players:GetPlayers()) do
                 if player ~= LocalPlayer and player.Character then
                     for _, part in pairs(player.Character:GetDescendants()) do
-                        if part:IsA("BasePart") and not part:FindFirstChildOfClass("Highlight") then
+                        if part:IsA("BasePart") then
                             local highlight = Instance.new("Highlight")
                             highlight.Parent = part
                             highlight.Adornee = part
@@ -506,7 +657,7 @@ task.spawn(function()
     end
 end)
 
--- ========== AUTOBUY ==========
+-- AutoBuy
 local function GetPlayerResources()
     local resources = { iron = 0, gold = 0 }
     local backpack = LocalPlayer:FindFirstChild("Backpack")
@@ -549,7 +700,6 @@ task.spawn(function()
                     }}
                     BedwarsPurchaseItem:InvokeServer(unpack(args))
                     _G.OwnedStoneSword = true
-                    Onion:Notify("Steinschwert gekauft!", "AutoBuy")
                 end)
             end
             
@@ -589,7 +739,7 @@ task.spawn(function()
     end
 end)
 
--- ========== ANTIVOID ==========
+-- AntiVoid
 task.spawn(function()
     while true do
         task.wait(0.3)
@@ -602,7 +752,7 @@ task.spawn(function()
     end
 end)
 
--- ========== AUTO LEAVE ==========
+-- Auto Leave
 local function SetupAutoLeave()
     if not LocalPlayer.Character then return end
     local humanoid = LocalPlayer.Character:FindFirstChild("Humanoid")
@@ -622,31 +772,35 @@ LocalPlayer.CharacterAdded:Connect(function()
 end)
 SetupAutoLeave()
 
--- ========== HOTKEYS ==========
+-- Hotkeys
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end
+    
     if input.KeyCode == Enum.KeyCode.F5 then
-        Window:Toggle()
+        if _G.OnionFallback and _G.OnionFrame then
+            _G.OnionFrame.Visible = not _G.OnionFrame.Visible
+        elseif Onion then
+            Onion:ToggleUI()
+        end
     elseif input.KeyCode == Enum.KeyCode.F6 then
         _G.KillAuraEnabled = not _G.KillAuraEnabled
-        Onion:Notify("Kill Aura: " .. (_G.KillAuraEnabled and "AN" or "AUS"), "Combat")
     elseif input.KeyCode == Enum.KeyCode.F7 then
         _G.AutoBuyEnabled = not _G.AutoBuyEnabled
-        Onion:Notify("AutoBuy: " .. (_G.AutoBuyEnabled and "AN" or "AUS"), "AutoBuy")
+        if _G.AutoBuyEnabled then
+            _G.OwnedStoneSword = false
+            _G.OwnedLeatherHelmet = false
+            _G.OwnedLeatherChestplate = false
+            _G.OwnedLeatherBoots = false
+        end
     elseif input.KeyCode == Enum.KeyCode.F8 then
         _G.FlyEnabled = not _G.FlyEnabled
-        Onion:Notify("Fly: " .. (_G.FlyEnabled and "AN" or "AUS"), "Movement")
     elseif input.KeyCode == Enum.KeyCode.F9 then
         _G.SpeedEnabled = not _G.SpeedEnabled
-        Onion:Notify("Speed: " .. (_G.SpeedEnabled and "AN" or "AUS"), "Movement")
     elseif input.KeyCode == Enum.KeyCode.F10 then
         _G.ESPEnabled = not _G.ESPEnabled
-        Onion:Notify("ESP: " .. (_G.ESPEnabled and "AN" or "AUS"), "Render")
     elseif input.KeyCode == Enum.KeyCode.F11 then
         _G.FullbrightEnabled = not _G.FullbrightEnabled
-        Onion:Notify("Fullbright: " .. (_G.FullbrightEnabled and "AN" or "AUS"), "Render")
     end
 end)
 
-Onion:Notify("Bedwars Script geladen! F5 = UI umschalten", "Willkommen")
-print("Bedwars Script mit Onion Labs geladen! Drücke F5 für UI")
+print("Bedwars Script geladen! Drücke F5 für UI")
