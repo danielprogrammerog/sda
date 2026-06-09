@@ -1,7 +1,7 @@
--- Bedwars Complete Script - OHNE Rayfield (100% funktionierend)
--- Alle Features mit GUI und Hotkeys
+-- Bedwars Complete Script - GEFIXT
+-- Bugs behoben: ESP, AutoBuy, Fly, Speed, Chams, AutoLeave, Weapon
 
--- ========== EIGENE GUI ERSTELLEN (weil Rayfield nicht lädt) ==========
+-- ========== GUI ERSTELLEN ==========
 local player = game.Players.LocalPlayer
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "BedwarsGUI"
@@ -18,12 +18,10 @@ mainFrame.Active = true
 mainFrame.Draggable = true
 mainFrame.Parent = screenGui
 
--- Abrundung
 local corner = Instance.new("UICorner")
 corner.CornerRadius = UDim.new(0, 10)
 corner.Parent = mainFrame
 
--- Titel
 local title = Instance.new("TextLabel")
 title.Size = UDim2.new(1, 0, 0, 40)
 title.Text = "🔥 BEDWARS SCRIPT 🔥"
@@ -33,21 +31,27 @@ title.Font = Enum.Font.GothamBold
 title.TextSize = 22
 title.Parent = mainFrame
 
--- Subtitle
 local subtitle = Instance.new("TextLabel")
 subtitle.Size = UDim2.new(1, 0, 0, 25)
 subtitle.Position = UDim2.new(0, 0, 0, 40)
-subtitle.Text = "Alle Features | Hotkeys: F6-F11"
+subtitle.Text = "Alle Features | Hotkeys: F6-F11 | F5 = GUI"
 subtitle.TextColor3 = Color3.fromRGB(150, 150, 150)
 subtitle.BackgroundTransparency = 1
 subtitle.Font = Enum.Font.Gotham
 subtitle.TextSize = 14
 subtitle.Parent = mainFrame
 
--- Scrollbares Container
+-- Tabs Container
+local tabsContainer = Instance.new("Frame")
+tabsContainer.Size = UDim2.new(1, 0, 0, 40)
+tabsContainer.Position = UDim2.new(0, 0, 0, 70)
+tabsContainer.BackgroundTransparency = 1
+tabsContainer.Parent = mainFrame
+
+-- Scroll Container für Tab-Inhalte
 local scrollContainer = Instance.new("ScrollingFrame")
-scrollContainer.Size = UDim2.new(1, -20, 1, -110)
-scrollContainer.Position = UDim2.new(0, 10, 0, 70)
+scrollContainer.Size = UDim2.new(1, -20, 1, -130)
+scrollContainer.Position = UDim2.new(0, 10, 0, 115)
 scrollContainer.BackgroundTransparency = 1
 scrollContainer.CanvasSize = UDim2.new(0, 0, 0, 0)
 scrollContainer.ScrollBarThickness = 5
@@ -57,7 +61,26 @@ local layout = Instance.new("UIListLayout")
 layout.Padding = UDim.new(0, 8)
 layout.Parent = scrollContainer
 
--- Funktion zum Erstellen von Toggle-Buttons
+-- Schließen-Button
+local closeBtn = Instance.new("TextButton")
+closeBtn.Size = UDim2.new(0, 30, 0, 30)
+closeBtn.Position = UDim2.new(1, -35, 0, 5)
+closeBtn.Text = "✕"
+closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+closeBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+closeBtn.Font = Enum.Font.GothamBold
+closeBtn.TextSize = 18
+closeBtn.Parent = mainFrame
+
+local closeCorner = Instance.new("UICorner")
+closeCorner.CornerRadius = UDim.new(1, 0)
+closeCorner.Parent = closeBtn
+
+closeBtn.MouseButton1Click:Connect(function()
+    mainFrame.Visible = not mainFrame.Visible
+end)
+
+-- ========== HELFER-FUNKTIONEN ==========
 local function CreateToggle(parent, name, flag, color, hotkey)
     local frame = Instance.new("Frame")
     frame.Size = UDim2.new(1, -10, 0, 45)
@@ -95,7 +118,11 @@ local function CreateToggle(parent, name, flag, color, hotkey)
     corner3.CornerRadius = UDim.new(0, 6)
     corner3.Parent = button
     
-    local state = false
+    local state = _G[flag] or false
+    if state then
+        button.Text = "AN"
+        button.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
+    end
     
     button.MouseButton1Click:Connect(function()
         state = not state
@@ -114,7 +141,7 @@ end
 
 local function CreateSlider(parent, name, flag, min, max, default, suffix)
     local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(1, -10, 0, 60)
+    frame.Size = UDim2.new(1, -10, 0, 65)
     frame.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
     frame.BackgroundTransparency = 0.3
     frame.BorderSizePixel = 0
@@ -126,7 +153,7 @@ local function CreateSlider(parent, name, flag, min, max, default, suffix)
     
     local label = Instance.new("TextLabel")
     label.Size = UDim2.new(1, 0, 0, 25)
-    label.Text = name .. ": " .. default .. suffix
+    label.Text = name .. ": " .. tostring(default) .. suffix
     label.TextColor3 = Color3.fromRGB(220, 220, 220)
     label.BackgroundTransparency = 1
     label.Font = Enum.Font.Gotham
@@ -183,20 +210,15 @@ local function CreateSlider(parent, name, flag, min, max, default, suffix)
             _G[flag] = value
             fill.Size = UDim2.new(percent, 0, 1, 0)
             knob.Position = UDim2.new(percent, -8, 0.5, -8)
-            label.Text = name .. ": " .. value .. suffix
+            label.Text = name .. ": " .. tostring(value) .. suffix
         end
     end)
 end
 
 -- Tabs erstellen
-local tabsContainer = Instance.new("Frame")
-tabsContainer.Size = UDim2.new(1, 0, 0, 40)
-tabsContainer.Position = UDim2.new(0, 0, 0, 40)
-tabsContainer.BackgroundTransparency = 1
-tabsContainer.Parent = mainFrame
-
 local tabs = {"Combat", "Movement", "Render", "AutoBuy", "Utility"}
 local currentTab = nil
+local tabContents = {}
 
 for i, tabName in ipairs(tabs) do
     local tabBtn = Instance.new("TextButton")
@@ -214,8 +236,7 @@ for i, tabName in ipairs(tabs) do
     tabCorner.Parent = tabBtn
     
     local tabContent = Instance.new("ScrollingFrame")
-    tabContent.Size = UDim2.new(1, -20, 1, 0)
-    tabContent.Position = UDim2.new(0, 10, 0, 0)
+    tabContent.Size = UDim2.new(1, 0, 1, 0)
     tabContent.BackgroundTransparency = 1
     tabContent.CanvasSize = UDim2.new(0, 0, 0, 0)
     tabContent.ScrollBarThickness = 5
@@ -226,50 +247,43 @@ for i, tabName in ipairs(tabs) do
     tabLayout.Padding = UDim.new(0, 8)
     tabLayout.Parent = tabContent
     
+    tabContents[tabName] = tabContent
+    
     tabBtn.MouseButton1Click:Connect(function()
-        if currentTab then currentTab.Visible = false end
-        tabContent.Visible = true
-        currentTab = tabContent
+        for _, content in pairs(tabContents) do
+            content.Visible = false
+        end
         for _, btn in pairs(tabsContainer:GetChildren()) do
             if btn:IsA("TextButton") then
                 btn.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
             end
         end
+        tabContent.Visible = true
         tabBtn.BackgroundColor3 = Color3.fromRGB(80, 80, 120)
     end)
     
     if i == 1 then
         tabBtn.BackgroundColor3 = Color3.fromRGB(80, 80, 120)
         tabContent.Visible = true
-        currentTab = tabContent
     end
     
-    -- Combat Tab Inhalt
+    -- Tab Inhalte
     if tabName == "Combat" then
-        CreateToggle(tabContent, "Kill Aura (20s Radius, 8s Tiefe)", "KillAuraEnabled", Color3.fromRGB(255, 100, 100), "F6")
+        CreateToggle(tabContent, "Kill Aura (20s Radius, 8s Tiefe)", "KillAuraEnabled", nil, "F6")
         CreateSlider(tabContent, "Kill Aura Radius", "KillAuraRadius", 5, 30, 20, "s")
         CreateSlider(tabContent, "Kill Aura Tiefe", "KillAuraDepth", 2, 15, 8, "s")
         CreateSlider(tabContent, "Angriffsverzögerung", "KillAuraDelay", 0.05, 0.5, 0.1, "s")
-        CreateToggle(tabContent, "AutoClicker (15 CPS)", "AutoClickerEnabled", Color3.fromRGB(255, 100, 100), nil)
-    end
-    
-    -- Movement Tab Inhalt
-    if tabName == "Movement" then
-        CreateToggle(tabContent, "Fly (NCP Bypass)", "FlyEnabled", Color3.fromRGB(100, 200, 255), "F8")
-        CreateToggle(tabContent, "Speed (50 Walkspeed)", "SpeedEnabled", Color3.fromRGB(100, 200, 255), "F9")
-        CreateToggle(tabContent, "Spider (Wall Climb)", "SpiderEnabled", Color3.fromRGB(100, 200, 255), nil)
-    end
-    
-    -- Render Tab Inhalt
-    if tabName == "Render" then
-        CreateToggle(tabContent, "ESP (Nametags + Box)", "ESPEnabled", Color3.fromRGB(255, 200, 100), "F10")
-        CreateToggle(tabContent, "Fullbright", "FullbrightEnabled", Color3.fromRGB(255, 200, 100), "F11")
-        CreateToggle(tabContent, "Chams (Player Glow)", "ChamsEnabled", Color3.fromRGB(255, 200, 100), nil)
-    end
-    
-    -- AutoBuy Tab Inhalt
-    if tabName == "AutoBuy" then
-        CreateToggle(tabContent, "AutoBuy aktivieren", "AutoBuyEnabled", Color3.fromRGB(100, 255, 100), "F7")
+        CreateToggle(tabContent, "AutoClicker (15 CPS)", "AutoClickerEnabled", nil, nil)
+    elseif tabName == "Movement" then
+        CreateToggle(tabContent, "Fly (NCP Bypass)", "FlyEnabled", nil, "F8")
+        CreateToggle(tabContent, "Speed (50 Walkspeed)", "SpeedEnabled", nil, "F9")
+        CreateToggle(tabContent, "Spider (Wall Climb)", "SpiderEnabled", nil, nil)
+    elseif tabName == "Render" then
+        CreateToggle(tabContent, "ESP (Nametags + Box)", "ESPEnabled", nil, "F10")
+        CreateToggle(tabContent, "Fullbright", "FullbrightEnabled", nil, "F11")
+        CreateToggle(tabContent, "Chams (Player Glow)", "ChamsEnabled", nil, nil)
+    elseif tabName == "AutoBuy" then
+        CreateToggle(tabContent, "AutoBuy aktivieren", "AutoBuyEnabled", nil, "F7")
         CreateSlider(tabContent, "Shop Reichweite", "AutoBuyRange", 5, 30, 15, "s")
         
         local resetBtn = Instance.new("TextButton")
@@ -290,46 +304,18 @@ for i, tabName in ipairs(tabs) do
             _G.OwnedLeatherHelmet = false
             _G.OwnedLeatherChestplate = false
             _G.OwnedLeatherBoots = false
+            _G.OwnedIronSword = false
+            _G.OwnedIronHelmet = false
+            _G.OwnedIronChestplate = false
+            _G.OwnedIronBoots = false
         end)
-    end
-    
-    -- Utility Tab Inhalt
-    if tabName == "Utility" then
-        CreateToggle(tabContent, "AntiVoid (Reset bei Y<0)", "AntiVoidEnabled", Color3.fromRGB(150, 150, 255), nil)
-        CreateToggle(tabContent, "Auto Leave (bei Tod)", "AutoLeaveEnabled", Color3.fromRGB(150, 150, 255), nil)
+    elseif tabName == "Utility" then
+        CreateToggle(tabContent, "AntiVoid (Reset bei Y<0)", "AntiVoidEnabled", nil, nil)
+        CreateToggle(tabContent, "Auto Leave (bei Tod)", "AutoLeaveEnabled", nil, nil)
     end
 end
 
--- Schließen-Button
-local closeBtn = Instance.new("TextButton")
-closeBtn.Size = UDim2.new(0, 30, 0, 30)
-closeBtn.Position = UDim2.new(1, -35, 0, 5)
-closeBtn.Text = "✕"
-closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-closeBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
-closeBtn.Font = Enum.Font.GothamBold
-closeBtn.TextSize = 18
-closeBtn.Parent = mainFrame
-
-local closeCorner = Instance.new("UICorner")
-closeCorner.CornerRadius = UDim.new(1, 0)
-closeCorner.Parent = closeBtn
-
-closeBtn.MouseButton1Click:Connect(function()
-    mainFrame.Visible = not mainFrame.Visible
-end)
-
--- ========== HAUPTFUNKTIONEN ==========
-local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
-local RunService = game:GetService("RunService")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local Workspace = game:GetService("Workspace")
-local UserInputService = game:GetService("UserInputService")
-local Lighting = game:GetService("Lighting")
-local TeleportService = game:GetService("TeleportService")
-
--- Standardwerte setzen
+-- ========== STANDARDWERTE ==========
 _G.KillAuraEnabled = false
 _G.KillAuraRadius = 20
 _G.KillAuraDepth = 8
@@ -345,16 +331,36 @@ _G.AutoBuyEnabled = false
 _G.AutoBuyRange = 15
 _G.AntiVoidEnabled = false
 _G.AutoLeaveEnabled = false
+
+-- AutoBuy Status
 _G.OwnedStoneSword = false
 _G.OwnedLeatherHelmet = false
 _G.OwnedLeatherChestplate = false
 _G.OwnedLeatherBoots = false
+_G.OwnedIronSword = false
+_G.OwnedIronHelmet = false
+_G.OwnedIronChestplate = false
+_G.OwnedIronBoots = false
 
--- Network Pfade
-local NetManaged, SwordHit, SwordSwingMiss, BedwarsPurchaseItem, SetInvItem, SetArmorInvItem
+-- ========== SERVICES ==========
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local RunService = game:GetService("RunService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Workspace = game:GetService("Workspace")
+local UserInputService = game:GetService("UserInputService")
+local Lighting = game:GetService("Lighting")
+local TeleportService = game:GetService("TeleportService")
+
+-- ========== NETWORK PFADE ==========
+local SwordHit = nil
+local SwordSwingMiss = nil
+local BedwarsPurchaseItem = nil
+local SetInvItem = nil
+local SetArmorInvItem = nil
 
 pcall(function()
-    NetManaged = ReplicatedStorage:WaitForChild("rbxts_include"):WaitForChild("node_modules"):WaitForChild("@rbxts"):WaitForChild("net"):WaitForChild("out"):WaitForChild("_NetManaged")
+    local NetManaged = ReplicatedStorage:WaitForChild("rbxts_include"):WaitForChild("node_modules"):WaitForChild("@rbxts"):WaitForChild("net"):WaitForChild("out"):WaitForChild("_NetManaged")
     SwordHit = NetManaged:WaitForChild("SwordHit")
     SwordSwingMiss = NetManaged:WaitForChild("SwordSwingMiss")
     BedwarsPurchaseItem = NetManaged:WaitForChild("BedwarsPurchaseItem")
@@ -362,26 +368,32 @@ pcall(function()
     SetArmorInvItem = NetManaged:WaitForChild("SetArmorInvItem")
 end)
 
-local PlayerInventory = nil
-local CachedInvItems = nil
-local Weapon = nil
-
-pcall(function()
-    local InventoryFolder = ReplicatedStorage:WaitForChild("Inventories")
-    for _, child in pairs(InventoryFolder:GetChildren()) do
-        if child:FindFirstChild("stone_sword") then
-            PlayerInventory = child
-            break
+-- ========== WEAPON FINDEN ==========
+local function GetCurrentWeapon()
+    local char = LocalPlayer.Character
+    if not char then return nil end
+    
+    -- Erstes Schwert im Inventar finden
+    local inventory = LocalPlayer:FindFirstChild("Inventory")
+    if inventory then
+        for _, item in pairs(inventory:GetChildren()) do
+            if item:IsA("Tool") and (item.Name:find("sword") or item.Name:find("Sword")) then
+                return item
+            end
         end
     end
-    if not PlayerInventory then
-        PlayerInventory = InventoryFolder:GetChildren()[1]
+    
+    -- Im Charakter suchen
+    for _, item in pairs(char:GetChildren()) do
+        if item:IsA("Tool") and (item.Name:find("sword") or item.Name:find("Sword")) then
+            return item
+        end
     end
-    Weapon = PlayerInventory and PlayerInventory:FindFirstChild("stone_sword") or nil
-    CachedInvItems = ReplicatedStorage:WaitForChild("CachedInvItems")
-end)
+    
+    return nil
+end
 
--- KILL AURA
+-- ========== KILL AURA ==========
 local function GetClosestEnemy()
     if not LocalPlayer.Character then return nil end
     local hrp = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
@@ -391,15 +403,18 @@ local function GetClosestEnemy()
     local shortestDist = _G.KillAuraRadius
     
     for _, player in pairs(Players:GetPlayers()) do
-        if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("Humanoid") and player.Character.Humanoid.Health > 0 then
-            local targetHrp = player.Character:FindFirstChild("HumanoidRootPart")
-            if targetHrp then
-                local dist = (hrp.Position - targetHrp.Position).Magnitude
-                local yDiff = math.abs(hrp.Position.Y - targetHrp.Position.Y)
-                if dist <= _G.KillAuraRadius and yDiff <= _G.KillAuraDepth then
-                    if dist < shortestDist then
-                        shortestDist = dist
-                        closest = player
+        if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("Humanoid") then
+            local humanoid = player.Character.Humanoid
+            if humanoid.Health > 0 then
+                local targetHrp = player.Character:FindFirstChild("HumanoidRootPart")
+                if targetHrp then
+                    local dist = (hrp.Position - targetHrp.Position).Magnitude
+                    local yDiff = math.abs(hrp.Position.Y - targetHrp.Position.Y)
+                    if dist <= _G.KillAuraRadius and yDiff <= _G.KillAuraDepth then
+                        if dist < shortestDist then
+                            shortestDist = dist
+                            closest = player
+                        end
                     end
                 end
             end
@@ -411,9 +426,11 @@ end
 task.spawn(function()
     while true do
         task.wait(_G.KillAuraDelay)
-        if _G.KillAuraEnabled and LocalPlayer.Character and Weapon then
+        if _G.KillAuraEnabled and LocalPlayer.Character then
+            local weapon = GetCurrentWeapon()
             local target = GetClosestEnemy()
-            if target and target.Character then
+            
+            if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") and weapon then
                 pcall(function()
                     local args = {{
                         chargedAttack = { chargeRatio = 0 },
@@ -422,13 +439,15 @@ task.spawn(function()
                             selfPosition = { value = LocalPlayer.Character.HumanoidRootPart.Position },
                             targetPosition = { value = target.Character.HumanoidRootPart.Position }
                         },
-                        weapon = Weapon
+                        weapon = weapon
                     }}
-                    if SwordHit then SwordHit:FireServer(unpack(args)) end
+                    if SwordHit then
+                        SwordHit:FireServer(unpack(args))
+                    end
                 end)
-            elseif SwordSwingMiss then
+            elseif SwordSwingMiss and weapon then
                 pcall(function()
-                    local args = {{ weapon = Weapon, chargeRatio = 0 }}
+                    local args = {{ weapon = weapon, chargeRatio = 0 }}
                     SwordSwingMiss:FireServer(unpack(args))
                 end)
             end
@@ -436,7 +455,7 @@ task.spawn(function()
     end
 end)
 
--- AUTO CLICKER
+-- ========== AUTO CLICKER ==========
 task.spawn(function()
     while true do
         task.wait(1/15)
@@ -446,54 +465,90 @@ task.spawn(function()
     end
 end)
 
--- FLY
+-- ========== FLY ==========
 local FlyBV = nil
-task.spawn(function()
-    while true do
-        task.wait()
-        if _G.FlyEnabled and LocalPlayer.Character then
-            local char = LocalPlayer.Character
-            local humanoid = char:FindFirstChild("Humanoid")
-            if humanoid then
-                humanoid.PlatformStand = true
-                if not FlyBV or not FlyBV.Parent then
-                    FlyBV = Instance.new("BodyVelocity")
-                    FlyBV.MaxForce = Vector3.new(1e9, 1e9, 1e9)
-                    FlyBV.Parent = char
-                end
-                local move = Vector3.new()
-                if UserInputService:IsKeyDown(Enum.KeyCode.W) then move = move + Vector3.new(1, 0, 0) end
-                if UserInputService:IsKeyDown(Enum.KeyCode.S) then move = move - Vector3.new(1, 0, 0) end
-                if UserInputService:IsKeyDown(Enum.KeyCode.D) then move = move + Vector3.new(0, 0, 1) end
-                if UserInputService:IsKeyDown(Enum.KeyCode.A) then move = move - Vector3.new(0, 0, 1) end
-                if UserInputService:IsKeyDown(Enum.KeyCode.Space) then move = move + Vector3.new(0, 1, 0) end
-                if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then move = move - Vector3.new(0, 1, 0) end
-                FlyBV.Velocity = move * 50
-            end
-        elseif not _G.FlyEnabled and LocalPlayer.Character then
-            local char = LocalPlayer.Character
-            local humanoid = char:FindFirstChild("Humanoid")
-            if humanoid then humanoid.PlatformStand = false end
-            if FlyBV then FlyBV:Destroy(); FlyBV = nil end
-        end
-    end
-end)
+local FlyConnection = nil
 
--- SPEED
+local function StopFly()
+    if FlyBV then
+        FlyBV:Destroy()
+        FlyBV = nil
+    end
+    if FlyConnection then
+        FlyConnection:Disconnect()
+        FlyConnection = nil
+    end
+    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+        LocalPlayer.Character.Humanoid.PlatformStand = false
+    end
+end
+
+local function StartFly()
+    StopFly()
+    if not LocalPlayer.Character then return end
+    local humanoid = LocalPlayer.Character:FindFirstChild("Humanoid")
+    if humanoid then
+        humanoid.PlatformStand = true
+    end
+    
+    FlyBV = Instance.new("BodyVelocity")
+    FlyBV.MaxForce = Vector3.new(1e9, 1e9, 1e9)
+    FlyBV.Parent = LocalPlayer.Character
+    
+    FlyConnection = RunService.RenderStepped:Connect(function()
+        if not _G.FlyEnabled or not LocalPlayer.Character then
+            StopFly()
+            return
+        end
+        if not FlyBV or not FlyBV.Parent then
+            StartFly()
+            return
+        end
+        local move = Vector3.new()
+        if UserInputService:IsKeyDown(Enum.KeyCode.W) then move = move + Vector3.new(1, 0, 0) end
+        if UserInputService:IsKeyDown(Enum.KeyCode.S) then move = move - Vector3.new(1, 0, 0) end
+        if UserInputService:IsKeyDown(Enum.KeyCode.D) then move = move + Vector3.new(0, 0, 1) end
+        if UserInputService:IsKeyDown(Enum.KeyCode.A) then move = move - Vector3.new(0, 0, 1) end
+        if UserInputService:IsKeyDown(Enum.KeyCode.Space) then move = move + Vector3.new(0, 1, 0) end
+        if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then move = move - Vector3.new(0, 1, 0) end
+        FlyBV.Velocity = move * 50
+    end)
+end
+
 task.spawn(function()
     while true do
         task.wait(0.5)
-        if _G.SpeedEnabled and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
-            LocalPlayer.Character.Humanoid.WalkSpeed = 50
-        elseif not _G.SpeedEnabled and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
-            if LocalPlayer.Character.Humanoid.WalkSpeed == 50 then
-                LocalPlayer.Character.Humanoid.WalkSpeed = 16
+        if _G.FlyEnabled then
+            if not FlyBV or not FlyBV.Parent then
+                StartFly()
+            end
+        else
+            StopFly()
+        end
+    end
+end)
+
+-- ========== SPEED ==========
+task.spawn(function()
+    local originalSpeed = 16
+    while true do
+        task.wait(0.3)
+        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+            local humanoid = LocalPlayer.Character.Humanoid
+            if _G.SpeedEnabled then
+                if humanoid.WalkSpeed ~= 50 then
+                    humanoid.WalkSpeed = 50
+                end
+            else
+                if humanoid.WalkSpeed == 50 then
+                    humanoid.WalkSpeed = originalSpeed
+                end
             end
         end
     end
 end)
 
--- SPIDER
+-- ========== SPIDER ==========
 task.spawn(function()
     while true do
         task.wait()
@@ -507,78 +562,97 @@ task.spawn(function()
                 hrp.Velocity = hrp.Velocity + Vector3.new(0, 0.1, 0)
             end
         end
+        task.wait(0.05)
     end
 end)
 
--- ESP
+-- ========== ESP ==========
 local ESPObjects = {}
+local function ClearESP()
+    for _, obj in pairs(ESPObjects) do
+        pcall(function() obj:Destroy() end)
+    end
+    ESPObjects = {}
+end
+
 task.spawn(function()
     while true do
-        task.wait(0.1)
-        for _, obj in pairs(ESPObjects) do pcall(function() obj:Destroy() end) end
-        ESPObjects = {}
+        ClearESP()
         
-        if _G.ESPEnabled then
-            for _, player in pairs(Players:GetPlayers()) do
-                if player ~= LocalPlayer and player.Character then
-                    local hrp = player.Character:FindFirstChild("HumanoidRootPart")
-                    if hrp and Workspace.CurrentCamera and LocalPlayer.Character then
-                        local pos, onScreen = Workspace.CurrentCamera:WorldToViewportPoint(hrp.Position)
-                        if onScreen then
-                            local dist = (hrp.Position - (LocalPlayer.Character:FindFirstChild("HumanoidRootPart") and LocalPlayer.Character.HumanoidRootPart.Position or Vector3.new())).Magnitude
-                            local text = Drawing.new("Text")
-                            text.Text = player.Name .. " | " .. math.floor(dist) .. "s"
-                            text.Color = Color3.new(1, 1, 1)
-                            text.Size = 18
-                            text.Center = true
-                            text.Position = Vector2.new(pos.X, pos.Y - 30)
-                            text.Visible = true
-                            table.insert(ESPObjects, text)
-                            
-                            local box = Drawing.new("Square")
-                            box.Color = Color3.new(1, 0, 0)
-                            box.Thickness = 2
-                            box.Filled = false
-                            box.Size = Vector2.new(50, 50)
-                            box.Position = Vector2.new(pos.X - 25, pos.Y - 25)
-                            box.Visible = true
-                            table.insert(ESPObjects, box)
+        if _G.ESPEnabled and Workspace.CurrentCamera and LocalPlayer.Character then
+            local localHrp = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+            if localHrp then
+                for _, player in pairs(Players:GetPlayers()) do
+                    if player ~= LocalPlayer and player.Character then
+                        local hrp = player.Character:FindFirstChild("HumanoidRootPart")
+                        if hrp then
+                            local pos, onScreen = Workspace.CurrentCamera:WorldToViewportPoint(hrp.Position)
+                            if onScreen then
+                                local dist = (hrp.Position - localHrp.Position).Magnitude
+                                
+                                local text = Drawing.new("Text")
+                                text.Text = player.Name .. " | " .. math.floor(dist) .. "s"
+                                text.Color = Color3.new(1, 1, 1)
+                                text.Size = 18
+                                text.Center = true
+                                text.Position = Vector2.new(pos.X, pos.Y - 30)
+                                text.Visible = true
+                                table.insert(ESPObjects, text)
+                                
+                                local box = Drawing.new("Square")
+                                box.Color = Color3.new(1, 0, 0)
+                                box.Thickness = 2
+                                box.Filled = false
+                                box.Size = Vector2.new(50, 50)
+                                box.Position = Vector2.new(pos.X - 25, pos.Y - 25)
+                                box.Visible = true
+                                table.insert(ESPObjects, box)
+                            end
                         end
                     end
                 end
             end
         end
+        task.wait(0.1)
     end
 end)
 
--- FULLBRIGHT
+-- ========== FULLBRIGHT ==========
 task.spawn(function()
+    local originalAmbient = Lighting.Ambient
+    local originalBrightness = Lighting.Brightness
+    
     while true do
-        task.wait(0.5)
+        task.wait(0.3)
         if _G.FullbrightEnabled then
             Lighting.Ambient = Color3.new(1, 1, 1)
             Lighting.Brightness = 2
             Lighting.ClockTime = 12
         else
-            Lighting.Ambient = Color3.new(0, 0, 0)
-            Lighting.Brightness = 1
+            Lighting.Ambient = originalAmbient
+            Lighting.Brightness = originalBrightness
         end
     end
 end)
 
--- CHAMS
+-- ========== CHAMS ==========
 local ChamsHighlights = {}
+local function ClearChams()
+    for _, h in pairs(ChamsHighlights) do
+        pcall(function() h:Destroy() end)
+    end
+    ChamsHighlights = {}
+end
+
 task.spawn(function()
     while true do
-        task.wait(0.5)
-        for _, h in pairs(ChamsHighlights) do pcall(function() h:Destroy() end) end
-        ChamsHighlights = {}
+        ClearChams()
         
         if _G.ChamsEnabled then
             for _, player in pairs(Players:GetPlayers()) do
                 if player ~= LocalPlayer and player.Character then
                     for _, part in pairs(player.Character:GetDescendants()) do
-                        if part:IsA("BasePart") then
+                        if part:IsA("BasePart") and not part:FindFirstChildOfClass("Highlight") then
                             local highlight = Instance.new("Highlight")
                             highlight.Parent = part
                             highlight.Adornee = part
@@ -591,21 +665,30 @@ task.spawn(function()
                 end
             end
         end
+        task.wait(1)
     end
 end)
 
--- AUTOBUY FUNKTIONEN
+-- ========== AUTOBUY ==========
 local function GetPlayerResources()
-    local resources = { iron = 0, gold = 0 }
+    local resources = { iron = 0, gold = 0, diamond = 0, emerald = 0 }
     local backpack = LocalPlayer:FindFirstChild("Backpack")
     if backpack then
         for _, item in pairs(backpack:GetChildren()) do
             if item:IsA("Tool") then
                 local name = item.Name:lower()
+                local amount = 1
+                if item:FindFirstChild("Amount") then
+                    amount = item.Amount.Value
+                end
                 if name:find("iron") then
-                    resources.iron = resources.iron + (item:FindFirstChild("Amount") and item.Amount.Value or 1)
+                    resources.iron = resources.iron + amount
                 elseif name:find("gold") then
-                    resources.gold = resources.gold + (item:FindFirstChild("Amount") and item.Amount.Value or 1)
+                    resources.gold = resources.gold + amount
+                elseif name:find("diamond") then
+                    resources.diamond = resources.diamond + amount
+                elseif name:find("emerald") then
+                    resources.emerald = resources.emerald + amount
                 end
             end
         end
@@ -618,9 +701,10 @@ local function IsNearShop()
         return false
     end
     local hrp = LocalPlayer.Character.HumanoidRootPart
+    
     for _, obj in pairs(Workspace:GetDescendants()) do
-        if obj.Name:find("Shop") or obj.Name:find("ItemShop") then
-            local shopPos = obj:FindFirstChild("HumanoidRootPart") and obj.HumanoidRootPart.Position or obj.Position
+        if obj.Name and (obj.Name:find("Shop") or obj.Name:find("ItemShop") or obj.Name:find("ShopStand")) then
+            local shopPos = obj:FindFirstChild("HumanoidRootPart") and obj.HumanoidRootPart.Position or (obj:IsA("BasePart") and obj.Position)
             if shopPos and (hrp.Position - shopPos).Magnitude <= _G.AutoBuyRange then
                 return true
             end
@@ -632,24 +716,41 @@ end
 task.spawn(function()
     while true do
         task.wait(1)
-        if _G.AutoBuyEnabled and IsNearShop() then
+        if _G.AutoBuyEnabled and BedwarsPurchaseItem and IsNearShop() then
             local resources = GetPlayerResources()
             
-            if not _G.OwnedStoneSword and resources.iron >= 20 and BedwarsPurchaseItem then
+            -- Steinschwert kaufen
+            if not _G.OwnedStoneSword and resources.iron >= 20 then
                 pcall(function()
                     local args = {{
-                        shopItem = { itemType = "stone_sword", price = 20, currency = "iron", amount = 1, category = "Combat" },
+                        shopItem = {
+                            itemType = "stone_sword",
+                            price = 20,
+                            currency = "iron",
+                            amount = 1,
+                            category = "Combat"
+                        },
                         shopId = "1_item_shop"
                     }}
                     BedwarsPurchaseItem:InvokeServer(unpack(args))
                     _G.OwnedStoneSword = true
+                    game:GetService("StarterGui"):SetCore("SendNotification", {
+                        Title = "AutoBuy", Text = "Steinschwert gekauft!", Duration = 2
+                    })
                 end)
             end
             
-            if not _G.OwnedLeatherHelmet and resources.iron >= 50 and BedwarsPurchaseItem then
+            -- Leder Rüstung kaufen
+            if not _G.OwnedLeatherHelmet and resources.iron >= 50 then
                 pcall(function()
                     local args = {{
-                        shopItem = { itemType = "leather_helmet", price = 50, currency = "iron", amount = 1, category = "Combat" },
+                        shopItem = {
+                            itemType = "leather_helmet",
+                            price = 50,
+                            currency = "iron",
+                            amount = 1,
+                            category = "Combat"
+                        },
                         shopId = "1_item_shop"
                     }}
                     BedwarsPurchaseItem:InvokeServer(unpack(args))
@@ -657,10 +758,16 @@ task.spawn(function()
                 end)
             end
             
-            if not _G.OwnedLeatherChestplate and resources.iron >= 50 and BedwarsPurchaseItem then
+            if not _G.OwnedLeatherChestplate and resources.iron >= 50 then
                 pcall(function()
                     local args = {{
-                        shopItem = { itemType = "leather_chestplate", price = 50, currency = "iron", amount = 1, category = "Combat" },
+                        shopItem = {
+                            itemType = "leather_chestplate",
+                            price = 50,
+                            currency = "iron",
+                            amount = 1,
+                            category = "Combat"
+                        },
                         shopId = "1_item_shop"
                     }}
                     BedwarsPurchaseItem:InvokeServer(unpack(args))
@@ -668,10 +775,16 @@ task.spawn(function()
                 end)
             end
             
-            if not _G.OwnedLeatherBoots and resources.iron >= 50 and BedwarsPurchaseItem then
+            if not _G.OwnedLeatherBoots and resources.iron >= 50 then
                 pcall(function()
                     local args = {{
-                        shopItem = { itemType = "leather_boots", price = 50, currency = "iron", amount = 1, category = "Combat" },
+                        shopItem = {
+                            itemType = "leather_boots",
+                            price = 50,
+                            currency = "iron",
+                            amount = 1,
+                            category = "Combat"
+                        },
                         shopId = "1_item_shop"
                     }}
                     BedwarsPurchaseItem:InvokeServer(unpack(args))
@@ -682,34 +795,52 @@ task.spawn(function()
     end
 end)
 
--- ANTIVOID
+-- ========== ANTIVOID ==========
 task.spawn(function()
     while true do
-        task.wait(0.5)
+        task.wait(0.3)
         if _G.AntiVoidEnabled and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-            if LocalPlayer.Character.HumanoidRootPart.Position.Y < 0 then
-                LocalPlayer.Character.Humanoid.Health = 0
+            if LocalPlayer.Character.HumanoidRootPart.Position.Y < -10 then
+                local humanoid = LocalPlayer.Character:FindFirstChild("Humanoid")
+                if humanoid then
+                    humanoid.Health = 0
+                end
             end
         end
     end
 end)
 
--- AUTO LEAVE
-if LocalPlayer.Character then
-    LocalPlayer.Character:WaitForChild("Humanoid").Died:Connect(function()
-        if _G.AutoLeaveEnabled then
-            task.wait(1)
-            TeleportService:Teleport(game.PlaceId)
-        end
-    end)
+-- ========== AUTO LEAVE ==========
+local function SetupAutoLeave()
+    if not LocalPlayer.Character then return end
+    local humanoid = LocalPlayer.Character:FindFirstChild("Humanoid")
+    if humanoid then
+        humanoid.Died:Connect(function()
+            if _G.AutoLeaveEnabled then
+                task.wait(1)
+                TeleportService:Teleport(game.PlaceId)
+            end
+        end)
+    end
 end
+
+-- Bei Charakter-Reset neu verbinden
+LocalPlayer.CharacterAdded:Connect(function()
+    task.wait(0.5)
+    SetupAutoLeave()
+end)
+SetupAutoLeave()
 
 -- ========== HOTKEYS ==========
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end
     
-    if input.KeyCode == Enum.KeyCode.F6 then
-        _G.KillAuraEnabled = not _G.KillAuraEnabled
+    if input.KeyCode == Enum.KeyCode.F5 then
+        mainFrame.Visible = not mainFrame.Visible
+    elseif input.KeyCode == Enum.KeyCode.F6 then        _G.KillAuraEnabled = not _G.KillAuraEnabled
+        game:GetService("StarterGui"):SetCore("SendNotification", {
+            Title = "Kill Aura", Text = _G.KillAuraEnabled and "🟢 AN" or "🔴 AUS", Duration = 1
+        })
     elseif input.KeyCode == Enum.KeyCode.F7 then
         _G.AutoBuyEnabled = not _G.AutoBuyEnabled
         if _G.AutoBuyEnabled then
@@ -718,23 +849,34 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
             _G.OwnedLeatherChestplate = false
             _G.OwnedLeatherBoots = false
         end
+        game:GetService("StarterGui"):SetCore("SendNotification", {
+            Title = "AutoBuy", Text = _G.AutoBuyEnabled and "🟢 AN" or "🔴 AUS", Duration = 1
+        })
     elseif input.KeyCode == Enum.KeyCode.F8 then
         _G.FlyEnabled = not _G.FlyEnabled
+        game:GetService("StarterGui"):SetCore("SendNotification", {
+            Title = "Fly", Text = _G.FlyEnabled and "🟢 AN" or "🔴 AUS", Duration = 1
+        })
     elseif input.KeyCode == Enum.KeyCode.F9 then
         _G.SpeedEnabled = not _G.SpeedEnabled
+        game:GetService("StarterGui"):SetCore("SendNotification", {
+            Title = "Speed", Text = _G.SpeedEnabled and "🟢 AN" or "🔴 AUS", Duration = 1
+        })
     elseif input.KeyCode == Enum.KeyCode.F10 then
         _G.ESPEnabled = not _G.ESPEnabled
+        if not _G.ESPEnabled then ClearESP() end
+        game:GetService("StarterGui"):SetCore("SendNotification", {
+            Title = "ESP", Text = _G.ESPEnabled and "🟢 AN" or "🔴 AUS", Duration = 1
+        })
     elseif input.KeyCode == Enum.KeyCode.F11 then
         _G.FullbrightEnabled = not _G.FullbrightEnabled
-    end
-end)
-
--- GUI umschalten mit F5
-UserInputService.InputBegan:Connect(function(input, gameProcessed)
-    if gameProcessed then return end
-    if input.KeyCode == Enum.KeyCode.F5 then
-        mainFrame.Visible = not mainFrame.Visible
+        game:GetService("StarterGui"):SetCore("SendNotification", {
+            Title = "Fullbright", Text = _G.FullbrightEnabled and "🟢 AN" or "🔴 AUS", Duration = 1
+        })
     end
 end)
 
 print("Bedwars Script geladen! Drücke F5 für GUI | F6-F11 für Toggles")
+game:GetService("StarterGui"):SetCore("SendNotification", {
+    Title = "Bedwars Script", Text = "Geladen! F5 = GUI", Duration = 3
+})
