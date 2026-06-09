@@ -1,31 +1,316 @@
 -- ============================================
--- BEDWARS SCRIPT - GEFIXT
--- Verwendet: Rayfield (funktionierender Mirror) + Fallback
+-- BEDWARS SCRIPT - SIMPLE & GARANTIERT FUNKTIONIEREND
+-- Kein Rayfield, keine komplizierten Frameworks
 -- ============================================
 
--- ========== FUNKTIONIERENDE RAYFIELD MIRRORS ==========
-local Rayfield = nil
-local RayfieldLoaded = false
+-- ========== EINFACHE, SICHERE GUI ==========
+local player = game.Players.LocalPlayer
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "BedwarsSimpleUI"
+screenGui.Parent = player:WaitForChild("PlayerGui")
+screenGui.ResetOnSpawn = false
 
-local RayfieldMirrors = {
-    "https://raw.githubusercontent.com/shlexware/Rayfield/main/source",
-    "https://raw.githubusercontent.com/shlexware/Rayfield/main/source.lua",
-    "https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source",
-    "https://raw.githubusercontent.com/7GrandDadPGN/VapeV4ForRoblox/main/UI",
-}
+-- Hauptfenster
+local mainFrame = Instance.new("Frame")
+mainFrame.Size = UDim2.new(0, 450, 0, 500)
+mainFrame.Position = UDim2.new(0.5, -225, 0.5, -250)
+mainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
+mainFrame.BackgroundTransparency = 0
+mainFrame.BorderSizePixel = 0
+mainFrame.Active = true
+mainFrame.Draggable = true
+mainFrame.Parent = screenGui
 
-for _, url in ipairs(RayfieldMirrors) do
-    if not RayfieldLoaded then
-        local success, result = pcall(function()
-            return loadstring(game:HttpGet(url))()
-        end)
-        if success and result then
-            Rayfield = result
-            RayfieldLoaded = true
-            break
-        end
-    end
+-- Abrundung
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0, 10)
+corner.Parent = mainFrame
+
+-- Titel
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, 0, 0, 45)
+title.Text = "⚔️ BEDWARS PRO ⚔️"
+title.TextColor3 = Color3.fromRGB(255, 100, 100)
+title.BackgroundTransparency = 1
+title.Font = Enum.Font.GothamBold
+title.TextSize = 22
+title.Parent = mainFrame
+
+-- Subtitle
+local subtitle = Instance.new("TextLabel")
+subtitle.Size = UDim2.new(1, 0, 0, 25)
+subtitle.Position = UDim2.new(0, 0, 0, 40)
+subtitle.Text = "Hotkeys: F5=GUI | F6=KillAura | F7=AutoBuy | F8=Fly | F9=Speed | F10=ESP | F11=Fullbright"
+subtitle.TextColor3 = Color3.fromRGB(150, 150, 150)
+subtitle.BackgroundTransparency = 1
+subtitle.Font = Enum.Font.Gotham
+subtitle.TextSize = 11
+subtitle.Parent = mainFrame
+
+-- Close Button
+local closeBtn = Instance.new("TextButton")
+closeBtn.Size = UDim2.new(0, 30, 0, 30)
+closeBtn.Position = UDim2.new(1, -35, 0, 8)
+closeBtn.Text = "✕"
+closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+closeBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+closeBtn.Font = Enum.Font.GothamBold
+closeBtn.TextSize = 18
+closeBtn.BorderSizePixel = 0
+closeBtn.Parent = mainFrame
+
+local closeCorner = Instance.new("UICorner")
+closeCorner.CornerRadius = UDim.new(1, 0)
+closeCorner.Parent = closeBtn
+
+closeBtn.MouseButton1Click:Connect(function()
+    mainFrame.Visible = not mainFrame.Visible
+end)
+
+-- Scroll Container für Buttons
+local scrollFrame = Instance.new("ScrollingFrame")
+scrollFrame.Size = UDim2.new(1, -20, 1, -110)
+scrollFrame.Position = UDim2.new(0, 10, 0, 70)
+scrollFrame.BackgroundTransparency = 1
+scrollFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+scrollFrame.ScrollBarThickness = 5
+scrollFrame.Parent = mainFrame
+
+local scrollLayout = Instance.new("UIListLayout")
+scrollLayout.Padding = UDim.new(0, 8)
+scrollLayout.Parent = scrollFrame
+
+-- ========== BUTTONS ERSTELLEN ==========
+local function CreateButton(parent, text, color, callback)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(1, 0, 0, 45)
+    btn.Text = text
+    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btn.BackgroundColor3 = color
+    btn.Font = Enum.Font.GothamBold
+    btn.TextSize = 14
+    btn.BorderSizePixel = 0
+    btn.Parent = parent
+    
+    local btnCorner = Instance.new("UICorner")
+    btnCorner.CornerRadius = UDim.new(0, 8)
+    btnCorner.Parent = btn
+    
+    btn.MouseButton1Click:Connect(callback)
+    return btn
 end
+
+local function CreateToggleButton(parent, text, flag, hotkey, color)
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(1, 0, 0, 50)
+    frame.BackgroundColor3 = Color3.fromRGB(35, 35, 50)
+    frame.BackgroundTransparency = 0.3
+    frame.BorderSizePixel = 0
+    frame.Parent = parent
+    
+    local frameCorner = Instance.new("UICorner")
+    frameCorner.CornerRadius = UDim.new(0, 8)
+    frameCorner.Parent = frame
+    
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(0.65, 0, 1, 0)
+    label.Text = text .. (hotkey and " [" .. hotkey .. "]" or "")
+    label.TextColor3 = Color3.fromRGB(220, 220, 220)
+    label.BackgroundTransparency = 1
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.Padding = UDim.new(0, 12)
+    label.Font = Enum.Font.Gotham
+    label.TextSize = 13
+    label.Parent = frame
+    
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(0, 80, 0, 36)
+    btn.Position = UDim2.new(1, -90, 0.5, -18)
+    btn.Text = "AUS"
+    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+    btn.Font = Enum.Font.GothamBold
+    btn.TextSize = 14
+    btn.BorderSizePixel = 0
+    btn.Parent = frame
+    
+    local btnCorner = Instance.new("UICorner")
+    btnCorner.CornerRadius = UDim.new(0, 6)
+    btnCorner.Parent = btn
+    
+    local state = false
+    
+    btn.MouseButton1Click:Connect(function()
+        state = not state
+        _G[flag] = state
+        if state then
+            btn.Text = "AN"
+            btn.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
+        else
+            btn.Text = "AUS"
+            btn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+        end
+    end)
+end
+
+local function CreateSlider(parent, text, flag, minVal, maxVal, defaultVal, suffix)
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(1, 0, 0, 70)
+    frame.BackgroundColor3 = Color3.fromRGB(35, 35, 50)
+    frame.BackgroundTransparency = 0.3
+    frame.BorderSizePixel = 0
+    frame.Parent = parent
+    
+    local frameCorner = Instance.new("UICorner")
+    frameCorner.CornerRadius = UDim.new(0, 8)
+    frameCorner.Parent = frame
+    
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(1, 0, 0, 25)
+    label.Text = text .. ": " .. defaultVal .. suffix
+    label.TextColor3 = Color3.fromRGB(220, 220, 220)
+    label.BackgroundTransparency = 1
+    label.Font = Enum.Font.Gotham
+    label.TextSize = 13
+    label.Parent = frame
+    
+    local sliderBar = Instance.new("Frame")
+    sliderBar.Size = UDim2.new(0.85, 0, 0, 4)
+    sliderBar.Position = UDim2.new(0.075, 0, 0.65, 0)
+    sliderBar.BackgroundColor3 = Color3.fromRGB(60, 60, 80)
+    sliderBar.BorderSizePixel = 0
+    sliderBar.Parent = frame
+    
+    local fill = Instance.new("Frame")
+    fill.Size = UDim2.new((defaultVal - minVal) / (maxVal - minVal), 0, 1, 0)
+    fill.BackgroundColor3 = Color3.fromRGB(100, 150, 255)
+    fill.BorderSizePixel = 0
+    fill.Parent = sliderBar
+    
+    local valueLabel = Instance.new("TextLabel")
+    valueLabel.Size = UDim2.new(0, 50, 0, 25)
+    valueLabel.Position = UDim2.new(0.85, 0, 0.35, 0)
+    valueLabel.Text = tostring(defaultVal)
+    valueLabel.TextColor3 = Color3.fromRGB(255, 200, 100)
+    valueLabel.BackgroundTransparency = 1
+    valueLabel.Font = Enum.Font.GothamBold
+    valueLabel.TextSize = 13
+    valueLabel.Parent = frame
+    
+    local currentVal = defaultVal
+    _G[flag] = currentVal
+    
+    local dragging = false
+    local sliderConnection = nil
+    
+    local function updateValue(xPos)
+        local barPos = sliderBar.AbsolutePosition.X
+        local barWidth = sliderBar.AbsoluteSize.X
+        local percent = math.clamp((xPos - barPos) / barWidth, 0, 1)
+        currentVal = minVal + (maxVal - minVal) * percent
+        currentVal = math.floor(currentVal * 10) / 10
+        _G[flag] = currentVal
+        fill.Size = UDim2.new(percent, 0, 1, 0)
+        label.Text = text .. ": " .. currentVal .. suffix
+        valueLabel.Text = tostring(currentVal)
+    end
+    
+    local knob = Instance.new("TextButton")
+    knob.Size = UDim2.new(0, 18, 0, 18)
+    knob.Position = UDim2.new((defaultVal - minVal) / (maxVal - minVal), -9, 0.5, -9)
+    knob.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    knob.Text = ""
+    knob.BorderSizePixel = 0
+    knob.Parent = sliderBar
+    
+    local knobCorner = Instance.new("UICorner")
+    knobCorner.CornerRadius = UDim.new(1, 0)
+    knobCorner.Parent = knob
+    
+    knob.MouseButton1Down:Connect(function()
+        dragging = true
+        sliderConnection = game:GetService("RunService").RenderStepped:Connect(function()
+            if dragging then
+                local mousePos = game:GetService("UserInputService"):GetMouseLocation()
+                updateValue(mousePos.X)
+                knob.Position = UDim2.new((_G[flag] - minVal) / (maxVal - minVal), -9, 0.5, -9)
+            end
+        end)
+    end)
+    
+    game:GetService("UserInputService").InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 and dragging then
+            dragging = false
+            if sliderConnection then sliderConnection:Disconnect() end
+        end
+    end)
+end
+
+-- ========== UI INHALT ==========
+-- Section Titel
+local function addSection(title)
+    local section = Instance.new("TextLabel")
+    section.Size = UDim2.new(1, 0, 0, 30)
+    section.Text = "━━━━━ " .. title .. " ━━━━━"
+    section.TextColor3 = Color3.fromRGB(255, 200, 100)
+    section.BackgroundTransparency = 1
+    section.Font = Enum.Font.GothamBold
+    section.TextSize = 14
+    section.Parent = scrollFrame
+end
+
+addSection("🗡️ KAMPF")
+CreateToggleButton(scrollFrame, "Kill Aura", "KillAuraEnabled", "F6", nil)
+CreateSlider(scrollFrame, "Kill Aura Radius", "KillAuraRadius", 5, 30, 20, "s")
+CreateSlider(scrollFrame, "Kill Aura Tiefe", "KillAuraDepth", 2, 15, 8, "s")
+CreateSlider(scrollFrame, "Angriffsverzögerung", "KillAuraDelay", 0.05, 0.5, 0.1, "s")
+CreateToggleButton(scrollFrame, "AutoClicker (15 CPS)", "AutoClickerEnabled", nil, nil)
+
+addSection("🏃 BEWEGUNG")
+CreateToggleButton(scrollFrame, "Fly (NCP Bypass)", "FlyEnabled", "F8", nil)
+CreateToggleButton(scrollFrame, "Speed (50 Walkspeed)", "SpeedEnabled", "F9", nil)
+CreateToggleButton(scrollFrame, "Spider (Wall Climb)", "SpiderEnabled", nil, nil)
+
+addSection("👁️ VISUALS")
+CreateToggleButton(scrollFrame, "ESP (Nametags + Box)", "ESPEnabled", "F10", nil)
+CreateToggleButton(scrollFrame, "Fullbright", "FullbrightEnabled", "F11", nil)
+CreateToggleButton(scrollFrame, "Chams (Player Glow)", "ChamsEnabled", nil, nil)
+
+addSection("🛒 AUTOBUY")
+CreateToggleButton(scrollFrame, "AutoBuy aktivieren", "AutoBuyEnabled", "F7", nil)
+CreateSlider(scrollFrame, "Shop Reichweite", "AutoBuyRange", 5, 30, 15, "s")
+
+-- Reset Button
+local resetBtn = Instance.new("TextButton")
+resetBtn.Size = UDim2.new(1, 0, 0, 40)
+resetBtn.Text = "🔄 Reset Gekauft-Status"
+resetBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+resetBtn.BackgroundColor3 = Color3.fromRGB(200, 100, 50)
+resetBtn.Font = Enum.Font.GothamBold
+resetBtn.TextSize = 14
+resetBtn.BorderSizePixel = 0
+resetBtn.Parent = scrollFrame
+
+local resetCorner = Instance.new("UICorner")
+resetCorner.CornerRadius = UDim.new(0, 8)
+resetCorner.Parent = resetBtn
+
+resetBtn.MouseButton1Click:Connect(function()
+    _G.OwnedStoneSword = false
+    _G.OwnedLeatherHelmet = false
+    _G.OwnedLeatherChestplate = false
+    _G.OwnedLeatherBoots = false
+    game:GetService("StarterGui"):SetCore("SendNotification", {Title = "AutoBuy", Text = "Status zurückgesetzt!", Duration = 2})
+end)
+
+addSection("🛡️ UTILITY")
+CreateToggleButton(scrollFrame, "AntiVoid (Reset bei Y<0)", "AntiVoidEnabled", nil, nil)
+CreateToggleButton(scrollFrame, "Auto Leave (bei Tod)", "AutoLeaveEnabled", nil, nil)
+
+-- ScrollFrame CanvasSize updaten
+scrollLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+    scrollFrame.CanvasSize = UDim2.new(0, 0, 0, scrollLayout.AbsoluteContentSize.Y + 20)
+end)
 
 -- ========== STANDARDWERTE ==========
 _G.KillAuraEnabled = false
@@ -58,7 +343,6 @@ local UserInputService = game:GetService("UserInputService")
 local Lighting = game:GetService("Lighting")
 local TeleportService = game:GetService("TeleportService")
 local StarterGui = game:GetService("StarterGui")
-local TweenService = game:GetService("TweenService")
 
 -- ========== NETWORK PFADE ==========
 local SwordHit, SwordSwingMiss, BedwarsPurchaseItem
@@ -70,459 +354,7 @@ pcall(function()
     BedwarsPurchaseItem = NetManaged:WaitForChild("BedwarsPurchaseItem")
 end)
 
--- ========== EIGENE MODERNE GUI (FALLBACK) ==========
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "BedwarsProUI"
-ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
-ScreenGui.ResetOnSpawn = false
-
--- Hauptframe mit modernem Design
-local MainFrame = Instance.new("Frame")
-MainFrame.Size = UDim2.new(0, 550, 0, 600)
-MainFrame.Position = UDim2.new(0.5, -275, 0.5, -300)
-MainFrame.BackgroundColor3 = Color3.fromRGB(18, 18, 25)
-MainFrame.BackgroundTransparency = 0
-MainFrame.BorderSizePixel = 0
-MainFrame.Active = true
-MainFrame.Draggable = true
-MainFrame.ClipsDescendants = true
-MainFrame.Visible = RayfieldLoaded and false or true
-MainFrame.Parent = ScreenGui
-
--- Hauptrundung
-local MainCorner = Instance.new("UICorner")
-MainCorner.CornerRadius = UDim.new(0, 14)
-MainCorner.Parent = MainFrame
-
--- Glow/Shadow
-local Shadow = Instance.new("Frame")
-Shadow.Size = UDim2.new(1, 20, 1, 20)
-Shadow.Position = UDim2.new(0, -10, 0, -10)
-Shadow.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-Shadow.BackgroundTransparency = 0.85
-Shadow.BorderSizePixel = 0
-Shadow.Parent = MainFrame
-local ShadowCorner = Instance.new("UICorner")
-ShadowCorner.CornerRadius = UDim.new(0, 19)
-ShadowCorner.Parent = Shadow
-
--- Title Bar
-local TitleBar = Instance.new("Frame")
-TitleBar.Size = UDim2.new(1, 0, 0, 60)
-TitleBar.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
-TitleBar.BorderSizePixel = 0
-TitleBar.Parent = MainFrame
-
-local TitleCorner = Instance.new("UICorner")
-TitleCorner.CornerRadius = UDim.new(0, 14)
-TitleCorner.Parent = TitleBar
-
--- Nur oben abrunden
-local TopCornerFix = Instance.new("UICorner")
-TopCornerFix.CornerRadius = UDim.new(0, 14)
-TopCornerFix.Parent = TitleBar
-
--- Titel mit Icon
-local TitleLabel = Instance.new("TextLabel")
-TitleLabel.Size = UDim2.new(1, -100, 0, 35)
-TitleLabel.Position = UDim2.new(0, 15, 0, 8)
-TitleLabel.Text = "⚔️ BEDWARS PRO ⚔️"
-TitleLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
-TitleLabel.BackgroundTransparency = 1
-TitleLabel.Font = Enum.Font.GothamBold
-TitleLabel.TextSize = 22
-TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
-TitleLabel.Parent = TitleBar
-
--- Subtitle
-local SubLabel = Instance.new("TextLabel")
-SubLabel.Size = UDim2.new(1, -100, 0, 20)
-SubLabel.Position = UDim2.new(0, 15, 0, 38)
-SubLabel.Text = "All Features | Drücke F5 für UI | Hotkeys: F6-F11"
-SubLabel.TextColor3 = Color3.fromRGB(150, 150, 170)
-SubLabel.BackgroundTransparency = 1
-SubLabel.Font = Enum.Font.Gotham
-SubLabel.TextSize = 11
-SubLabel.TextXAlignment = Enum.TextXAlignment.Left
-SubLabel.Parent = TitleBar
-
--- Close Button
-local CloseBtn = Instance.new("TextButton")
-CloseBtn.Size = UDim2.new(0, 36, 0, 36)
-CloseBtn.Position = UDim2.new(1, -48, 0, 12)
-CloseBtn.Text = "✕"
-CloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-CloseBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
-CloseBtn.Font = Enum.Font.GothamBold
-CloseBtn.TextSize = 20
-CloseBtn.BorderSizePixel = 0
-CloseBtn.Parent = TitleBar
-
-local CloseCorner = Instance.new("UICorner")
-CloseCorner.CornerRadius = UDim.new(1, 0)
-CloseCorner.Parent = CloseBtn
-
-CloseBtn.MouseButton1Click:Connect(function()
-    MainFrame.Visible = not MainFrame.Visible
-end)
-
--- Minimize Button
-local MinBtn = Instance.new("TextButton")
-MinBtn.Size = UDim2.new(0, 36, 0, 36)
-MinBtn.Position = UDim2.new(1, -94, 0, 12)
-MinBtn.Text = "−"
-MinBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-MinBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 85)
-MinBtn.Font = Enum.Font.GothamBold
-MinBtn.TextSize = 24
-MinBtn.BorderSizePixel = 0
-MinBtn.Parent = TitleBar
-
-local MinCorner = Instance.new("UICorner")
-MinCorner.CornerRadius = UDim.new(1, 0)
-MinCorner.Parent = MinBtn
-
-local isMinimized = false
-MinBtn.MouseButton1Click:Connect(function()
-    isMinimized = not isMinimized
-    local targetHeight = isMinimized and 60 or 600
-    local tween = TweenService:Create(MainFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-        Size = UDim2.new(0, 550, 0, targetHeight)
-    })
-    tween:Play()
-    MinBtn.Text = isMinimized and "□" or "−"
-end)
-
--- ========== TABS ==========
-local TabContainer = Instance.new("Frame")
-TabContainer.Size = UDim2.new(1, 0, 0, 50)
-TabContainer.Position = UDim2.new(0, 0, 0, 60)
-TabContainer.BackgroundTransparency = 1
-TabContainer.Parent = MainFrame
-
-local TabButtons = {}
-local TabContents = {}
-
-local Tabs = {"⚔️ Combat", "🏃 Movement", "👁️ Visuals", "🛒 AutoBuy", "🛠️ Utility", "⚙️ Settings"}
-
--- Content Container (Scrolling)
-local ContentContainer = Instance.new("ScrollingFrame")
-ContentContainer.Size = UDim2.new(1, -20, 1, -130)
-ContentContainer.Position = UDim2.new(0, 10, 0, 115)
-ContentContainer.BackgroundTransparency = 1
-ContentContainer.CanvasSize = UDim2.new(0, 0, 0, 0)
-ContentContainer.ScrollBarThickness = 5
-ContentContainer.ScrollBarImageColor3 = Color3.fromRGB(100, 100, 130)
-ContentContainer.Parent = MainFrame
-
-local ContentLayout = Instance.new("UIListLayout")
-ContentLayout.Padding = UDim.new(0, 8)
-ContentLayout.Parent = ContentContainer
-
-for i, tabName in ipairs(Tabs) do
-    -- Tab Button
-    local TabBtn = Instance.new("TextButton")
-    TabBtn.Size = UDim2.new(1 / #Tabs, -4, 1, -8)
-    TabBtn.Position = UDim2.new((i-1) / #Tabs, 2, 0, 4)
-    TabBtn.Text = tabName
-    TabBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 50)
-    TabBtn.TextColor3 = Color3.fromRGB(200, 200, 220)
-    TabBtn.Font = Enum.Font.GothamBold
-    TabBtn.TextSize = 13
-    TabBtn.BorderSizePixel = 0
-    TabBtn.Parent = TabContainer
-    
-    local TabCorner = Instance.new("UICorner")
-    TabCorner.CornerRadius = UDim.new(0, 8)
-    TabCorner.Parent = TabBtn
-    
-    -- Tab Content Container
-    local TabContent = Instance.new("Frame")
-    TabContent.Size = UDim2.new(1, 0, 0, 0)
-    TabContent.BackgroundTransparency = 1
-    TabContent.Visible = (i == 1)
-    TabContent.Parent = ContentContainer
-    
-    local TabContentLayout = Instance.new("UIListLayout")
-    TabContentLayout.Padding = UDim.new(0, 8)
-    TabContentLayout.Parent = TabContent
-    
-    TabButtons[tabName] = TabBtn
-    TabContents[tabName] = TabContent
-    
-    TabBtn.MouseButton1Click:Connect(function()
-        for _, content in pairs(TabContents) do
-            content.Visible = false
-        end
-        for _, btn in pairs(TabButtons) do
-            btn.BackgroundColor3 = Color3.fromRGB(35, 35, 50)
-            btn.TextColor3 = Color3.fromRGB(200, 200, 220)
-        end
-        TabContent.Visible = true
-        TabBtn.BackgroundColor3 = Color3.fromRGB(80, 80, 130)
-        TabBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    end)
-end
-
--- ========== UI HELFER FUNKTIONEN ==========
-local function CreateSection(parent, title)
-    local Section = Instance.new("Frame")
-    Section.Size = UDim2.new(1, 0, 0, 38)
-    Section.BackgroundColor3 = Color3.fromRGB(35, 35, 50)
-    Section.BackgroundTransparency = 0.4
-    Section.BorderSizePixel = 0
-    Section.Parent = parent
-    
-    local SectionCorner = Instance.new("UICorner")
-    SectionCorner.CornerRadius = UDim.new(0, 8)
-    SectionCorner.Parent = Section
-    
-    local SectionTitle = Instance.new("TextLabel")
-    SectionTitle.Size = UDim2.new(1, -15, 1, 0)
-    SectionTitle.Position = UDim2.new(0, 10, 0, 0)
-    SectionTitle.Text = title
-    SectionTitle.TextColor3 = Color3.fromRGB(255, 200, 100)
-    SectionTitle.BackgroundTransparency = 1
-    SectionTitle.Font = Enum.Font.GothamBold
-    SectionTitle.TextSize = 14
-    SectionTitle.TextXAlignment = Enum.TextXAlignment.Left
-    SectionTitle.Parent = Section
-end
-
-local function CreateToggle(parent, name, flag, hotkey)
-    local Frame = Instance.new("Frame")
-    Frame.Size = UDim2.new(1, 0, 0, 48)
-    Frame.BackgroundColor3 = Color3.fromRGB(28, 28, 40)
-    Frame.BackgroundTransparency = 0.3
-    Frame.BorderSizePixel = 0
-    Frame.Parent = parent
-    
-    local FrameCorner = Instance.new("UICorner")
-    FrameCorner.CornerRadius = UDim.new(0, 8)
-    FrameCorner.Parent = Frame
-    
-    local Label = Instance.new("TextLabel")
-    Label.Size = UDim2.new(0.7, 0, 1, 0)
-    Label.Text = name .. (hotkey and " [" .. hotkey .. "]" or "")
-    Label.TextColor3 = Color3.fromRGB(220, 220, 240)
-    Label.BackgroundTransparency = 1
-    Label.TextXAlignment = Enum.TextXAlignment.Left
-    Label.Padding = UDim.new(0, 12)
-    Label.Font = Enum.Font.Gotham
-    Label.TextSize = 13
-    Label.Parent = Frame
-    
-    local Btn = Instance.new("TextButton")
-    Btn.Size = UDim2.new(0, 85, 0, 34)
-    Btn.Position = UDim2.new(1, -95, 0.5, -17)
-    Btn.Text = "AUS"
-    Btn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    Btn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
-    Btn.Font = Enum.Font.GothamBold
-    Btn.TextSize = 13
-    Btn.BorderSizePixel = 0
-    Btn.Parent = Frame
-    
-    local BtnCorner = Instance.new("UICorner")
-    BtnCorner.CornerRadius = UDim.new(0, 6)
-    BtnCorner.Parent = Btn
-    
-    local state = _G[flag] or false
-    if state then
-        Btn.Text = "AN"
-        Btn.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
-    end
-    
-    Btn.MouseButton1Click:Connect(function()
-        state = not state
-        _G[flag] = state
-        if state then
-            Btn.Text = "AN"
-            Btn.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
-        else
-            Btn.Text = "AUS"
-            Btn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
-        end
-    end)
-end
-
-local function CreateSlider(parent, name, flag, min, max, default, suffix)
-    local Frame = Instance.new("Frame")
-    Frame.Size = UDim2.new(1, 0, 0, 70)
-    Frame.BackgroundColor3 = Color3.fromRGB(28, 28, 40)
-    Frame.BackgroundTransparency = 0.3
-    Frame.BorderSizePixel = 0
-    Frame.Parent = parent
-    
-    local FrameCorner = Instance.new("UICorner")
-    FrameCorner.CornerRadius = UDim.new(0, 8)
-    FrameCorner.Parent = Frame
-    
-    local Label = Instance.new("TextLabel")
-    Label.Size = UDim2.new(1, 0, 0, 28)
-    Label.Text = name .. ": " .. default .. suffix
-    Label.TextColor3 = Color3.fromRGB(220, 220, 240)
-    Label.BackgroundTransparency = 1
-    Label.Font = Enum.Font.Gotham
-    Label.TextSize = 13
-    Label.Parent = Frame
-    
-    local SliderBar = Instance.new("Frame")
-    SliderBar.Size = UDim2.new(0.9, 0, 0, 4)
-    SliderBar.Position = UDim2.new(0.05, 0, 0.65, 0)
-    SliderBar.BackgroundColor3 = Color3.fromRGB(60, 60, 85)
-    SliderBar.BorderSizePixel = 0
-    SliderBar.Parent = Frame
-    
-    local Fill = Instance.new("Frame")
-    Fill.Size = UDim2.new((default - min) / (max - min), 0, 1, 0)
-    Fill.BackgroundColor3 = Color3.fromRGB(100, 150, 255)
-    Fill.BorderSizePixel = 0
-    Fill.Parent = SliderBar
-    
-    local Knob = Instance.new("TextButton")
-    Knob.Size = UDim2.new(0, 18, 0, 18)
-    Knob.Position = UDim2.new((default - min) / (max - min), -9, 0.5, -9)
-    Knob.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    Knob.Text = ""
-    Knob.BorderSizePixel = 0
-    Knob.Parent = SliderBar
-    
-    local KnobCorner = Instance.new("UICorner")
-    KnobCorner.CornerRadius = UDim.new(1, 0)
-    KnobCorner.Parent = Knob
-    
-    local Value = default
-    _G[flag] = Value
-    local Dragging = false
-    
-    Knob.MouseButton1Down:Connect(function()
-        Dragging = true
-    end)
-    
-    UserInputService.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            Dragging = false
-        end
-    end)
-    
-    RunService.RenderStepped:Connect(function()
-        if Dragging then
-            local MousePos = UserInputService:GetMouseLocation()
-            local BarPos = SliderBar.AbsolutePosition.X
-            local BarWidth = SliderBar.AbsoluteSize.X
-            local Percent = math.clamp((MousePos.X - BarPos) / BarWidth, 0, 1)
-            Value = min + (max - min) * Percent
-            Value = math.floor(Value * 10) / 10
-            _G[flag] = Value
-            Fill.Size = UDim2.new(Percent, 0, 1, 0)
-            Knob.Position = UDim2.new(Percent, -9, 0.5, -9)
-            Label.Text = name .. ": " .. Value .. suffix
-        end
-    end)
-end
-
-local function CreateButton(parent, name, callback)
-    local Btn = Instance.new("TextButton")
-    Btn.Size = UDim2.new(1, 0, 0, 42)
-    Btn.Text = name
-    Btn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    Btn.BackgroundColor3 = Color3.fromRGB(80, 80, 120)
-    Btn.Font = Enum.Font.GothamBold
-    Btn.TextSize = 14
-    Btn.BorderSizePixel = 0
-    Btn.Parent = parent
-    
-    local BtnCorner = Instance.new("UICorner")
-    BtnCorner.CornerRadius = UDim.new(0, 8)
-    BtnCorner.Parent = Btn
-    
-    Btn.MouseButton1Click:Connect(callback)
-end
-
-local function CreateLabel(parent, text, color)
-    local Lbl = Instance.new("TextLabel")
-    Lbl.Size = UDim2.new(1, 0, 0, 26)
-    Lbl.Text = text
-    Lbl.TextColor3 = color or Color3.fromRGB(200, 200, 220)
-    Lbl.BackgroundTransparency = 1
-    Lbl.Font = Enum.Font.Gotham
-    Lbl.TextSize = 12
-    Lbl.TextXAlignment = Enum.TextXAlignment.Left
-    Lbl.Padding = UDim.new(0, 12)
-    Lbl.Parent = parent
-end
-
--- ========== UI INHALT BEFÜLLEN ==========
--- Combat Tab
-local CombatContent = TabContents["⚔️ Combat"]
-CreateSection(CombatContent, "🗡️ Kill Aura")
-CreateToggle(CombatContent, "Kill Aura aktivieren", "KillAuraEnabled", "F6")
-CreateSlider(CombatContent, "Kill Aura Radius", "KillAuraRadius", 5, 30, 20, "s")
-CreateSlider(CombatContent, "Kill Aura Tiefe", "KillAuraDepth", 2, 15, 8, "s")
-CreateSlider(CombatContent, "Angriffsverzögerung", "KillAuraDelay", 0.05, 0.5, 0.1, "s")
-CreateSection(CombatContent, "🖱️ AutoClicker")
-CreateToggle(CombatContent, "AutoClicker (15 CPS)", "AutoClickerEnabled", nil)
-
--- Movement Tab
-local MovementContent = TabContents["🏃 Movement"]
-CreateSection(MovementContent, "🕊️ Flight")
-CreateToggle(MovementContent, "Fly (NCP Bypass)", "FlyEnabled", "F8")
-CreateSection(MovementContent, "💨 Speed")
-CreateToggle(MovementContent, "Speed (50 Walkspeed)", "SpeedEnabled", "F9")
-CreateSection(MovementContent, "🕷️ Spider")
-CreateToggle(MovementContent, "Spider (Wall Climb)", "SpiderEnabled", nil)
-
--- Visuals Tab
-local VisualsContent = TabContents["👁️ Visuals"]
-CreateSection(VisualsContent, "👁️ ESP")
-CreateToggle(VisualsContent, "ESP (Nametags + Box)", "ESPEnabled", "F10")
-CreateSection(VisualsContent, "💡 Brightness")
-CreateToggle(VisualsContent, "Fullbright", "FullbrightEnabled", "F11")
-CreateSection(VisualsContent, "✨ Chams")
-CreateToggle(VisualsContent, "Chams (Player Glow)", "ChamsEnabled", nil)
-
--- AutoBuy Tab
-local AutoBuyContent = TabContents["🛒 AutoBuy"]
-CreateSection(AutoBuyContent, "🛒 AutoBuy")
-CreateToggle(AutoBuyContent, "AutoBuy aktivieren", "AutoBuyEnabled", "F7")
-CreateSlider(AutoBuyContent, "Shop Reichweite", "AutoBuyRange", 5, 30, 15, "s")
-CreateSection(AutoBuyContent, "📦 Items")
-CreateLabel(AutoBuyContent, "• Steinschwert (20 Eisen)", Color3.fromRGB(200, 200, 220))
-CreateLabel(AutoBuyContent, "• Lederhelm (50 Eisen)", Color3.fromRGB(200, 200, 220))
-CreateLabel(AutoBuyContent, "• Lederbrustplatte (50 Eisen)", Color3.fromRGB(200, 200, 220))
-CreateLabel(AutoBuyContent, "• Lederstiefel (50 Eisen)", Color3.fromRGB(200, 200, 220))
-CreateButton(AutoBuyContent, "🔄 Reset Gekauft-Status", function()
-    _G.OwnedStoneSword = false
-    _G.OwnedLeatherHelmet = false
-    _G.OwnedLeatherChestplate = false
-    _G.OwnedLeatherBoots = false
-    StarterGui:SetCore("SendNotification", {Title = "AutoBuy", Text = "Status zurückgesetzt!", Duration = 2})
-end)
-
--- Utility Tab
-local UtilityContent = TabContents["🛠️ Utility"]
-CreateSection(UtilityContent, "🛡️ Schutz")
-CreateToggle(UtilityContent, "AntiVoid (Reset bei Y<0)", "AntiVoidEnabled", nil)
-CreateSection(UtilityContent, "🚪 Auto Leave")
-CreateToggle(UtilityContent, "Auto Leave (bei Tod)", "AutoLeaveEnabled", nil)
-
--- Settings Tab
-local SettingsContent = TabContents["⚙️ Settings"]
-CreateSection(SettingsContent, "⌨️ Hotkeys")
-CreateLabel(SettingsContent, "F5 - UI ein-/ausblenden", Color3.fromRGB(255, 200, 100))
-CreateLabel(SettingsContent, "F6 - Kill Aura", Color3.fromRGB(255, 200, 100))
-CreateLabel(SettingsContent, "F7 - AutoBuy", Color3.fromRGB(255, 200, 100))
-CreateLabel(SettingsContent, "F8 - Fly", Color3.fromRGB(255, 200, 100))
-CreateLabel(SettingsContent, "F9 - Speed", Color3.fromRGB(255, 200, 100))
-CreateLabel(SettingsContent, "F10 - ESP", Color3.fromRGB(255, 200, 100))
-CreateLabel(SettingsContent, "F11 - Fullbright", Color3.fromRGB(255, 200, 100))
-CreateSection(SettingsContent, "ℹ️ Info")
-CreateLabel(SettingsContent, "Bedwars Pro Script v3.0", Color3.fromRGB(150, 150, 170))
-CreateLabel(SettingsContent, "Alle Features geladen!", Color3.fromRGB(100, 200, 100))
-
--- ========== HAUPTFUNKTIONEN ==========
--- Weapon finden
+-- ========== WEAPON FINDEN ==========
 local function GetCurrentWeapon()
     local char = LocalPlayer.Character
     if not char then return nil end
@@ -544,7 +376,7 @@ local function GetCurrentWeapon()
     return nil
 end
 
--- Kill Aura
+-- ========== KILL AURA ==========
 local function GetClosestEnemy()
     if not LocalPlayer.Character then return nil end
     local hrp = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
@@ -603,7 +435,7 @@ task.spawn(function()
     end
 end)
 
--- AutoClicker
+-- ========== AUTO CLICKER ==========
 task.spawn(function()
     while true do
         task.wait(1/15)
@@ -613,7 +445,7 @@ task.spawn(function()
     end
 end)
 
--- Fly
+-- ========== FLY ==========
 local FlyBV = nil
 task.spawn(function()
     while true do
@@ -645,7 +477,7 @@ task.spawn(function()
     end
 end)
 
--- Speed
+-- ========== SPEED ==========
 task.spawn(function()
     while true do
         task.wait(0.3)
@@ -660,7 +492,7 @@ task.spawn(function()
     end
 end)
 
--- Spider
+-- ========== SPIDER ==========
 task.spawn(function()
     while true do
         task.wait(0.05)
@@ -677,7 +509,7 @@ task.spawn(function()
     end
 end)
 
--- ESP
+-- ========== ESP ==========
 local ESPObjects = {}
 task.spawn(function()
     while true do
@@ -721,7 +553,7 @@ task.spawn(function()
     end
 end)
 
--- Fullbright
+-- ========== FULLBRIGHT ==========
 task.spawn(function()
     while true do
         task.wait(0.3)
@@ -736,7 +568,7 @@ task.spawn(function()
     end
 end)
 
--- Chams
+-- ========== CHAMS ==========
 local ChamsHighlights = {}
 task.spawn(function()
     while true do
@@ -764,7 +596,7 @@ task.spawn(function()
     end
 end)
 
--- AutoBuy
+-- ========== AUTOBUY ==========
 local function GetPlayerResources()
     local resources = { iron = 0, gold = 0 }
     local backpack = LocalPlayer:FindFirstChild("Backpack")
@@ -846,7 +678,7 @@ task.spawn(function()
     end
 end)
 
--- AntiVoid
+-- ========== ANTIVOID ==========
 task.spawn(function()
     while true do
         task.wait(0.3)
@@ -859,7 +691,7 @@ task.spawn(function()
     end
 end)
 
--- Auto Leave
+-- ========== AUTO LEAVE ==========
 local function SetupAutoLeave()
     if not LocalPlayer.Character then return end
     local humanoid = LocalPlayer.Character:FindFirstChild("Humanoid")
@@ -884,7 +716,7 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end
     
     if input.KeyCode == Enum.KeyCode.F5 then
-        MainFrame.Visible = not MainFrame.Visible
+        mainFrame.Visible = not mainFrame.Visible
     elseif input.KeyCode == Enum.KeyCode.F6 then
         _G.KillAuraEnabled = not _G.KillAuraEnabled
         StarterGui:SetCore("SendNotification", {Title = "Kill Aura", Text = _G.KillAuraEnabled and "🟢 AN" or "🔴 AUS", Duration = 1})
@@ -912,20 +744,11 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
     end
 end)
 
--- Start Animation
-MainFrame.Size = UDim2.new(0, 500, 0, 500)
-MainFrame.BackgroundTransparency = 0.1
-task.wait(0.05)
-local startTween = TweenService:Create(MainFrame, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
-    Size = UDim2.new(0, 550, 0, 600),
-    BackgroundTransparency = 0
-})
-startTween:Play()
-
+-- ========== START ==========
 StarterGui:SetCore("SendNotification", {
     Title = "Bedwars Pro",
-    Text = "Script geladen! Drücke F5 für UI | F6-F11 für Features",
-    Duration = 4
+    Text = "Script geladen! GUI ist sichtbar. Drücke F5 zum schließen/öffnen.",
+    Duration = 5
 })
 
-print("Bedwars Script geladen! Drücke F5")
+print("Bedwars Script geladen! GUI sollte sichtbar sein.")
