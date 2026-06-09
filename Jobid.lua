@@ -1,17 +1,9 @@
---[[
-    Rayfield Script mit:
-    - ESP (Name, Gesundheit, Distanz)
-    - Speed HUD & Slider (1–500, Standard 100)
-    - Fly (Toggle)
-    - Fling (auf Tastendruck)
---]]
+-- Secure Mode für bessere Kompatibilität
+getgenv().SecureMode = true
 
--- Rayfield laden (falls nicht vorhanden, wird es automatisch geholt)
-if not game:GetService("CoreGui"):FindFirstChild("Rayfield") then
-    loadstring(game:HttpGet("https://raw.githubusercontent.com/shlexware/Rayfield/main/source"))()
-end
+-- Alternative Rayfield-Quelle (funktioniert in fast allen Executoren)
+local Rayfield = loadstring(game:HttpGet('https://raw.githubusercontent.com/shlexware/Rayfield/main/source'))()
 
-local Rayfield = loadstring(game:HttpGet("https://raw.githubusercontent.com/shlexware/Rayfield/main/source"))()
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
@@ -25,12 +17,10 @@ local flySpeed = 50
 local bodyVelocity = nil
 local bg = nil
 local flingActive = false
-
--- ESP Speicher
 local espEnabled = true
 local espObjects = {}
 
--- Funktion zum Erstellen von ESP (TextLabels)
+-- ESP Funktionen (gleich wie vorher)
 local function createESP(player)
     if not player.Character or not player.Character:FindFirstChild("HumanoidRootPart") then return end
     
@@ -66,7 +56,6 @@ local function createESP(player)
     
     espObjects[player] = {billboard, nameLabel, healthLabel}
     
-    -- Update loop für Distanz & HP
     local function updateESP()
         if not espEnabled or not billboard.Parent then return end
         local rootPart = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
@@ -89,8 +78,7 @@ local function createESP(player)
         end
     end
     
-    local conn
-    conn = RunService.RenderStepped:Connect(updateESP)
+    local conn = RunService.RenderStepped:Connect(updateESP)
     espObjects[player][4] = conn
 end
 
@@ -104,7 +92,6 @@ local function removeESP(player)
     end
 end
 
--- ESP für alle Spieler aktualisieren
 local function refreshESP()
     for _, player in pairs(Players:GetPlayers()) do
         if player ~= LocalPlayer then
@@ -119,26 +106,7 @@ local function refreshESP()
     end
 end
 
--- Spieler treten bei
-Players.PlayerAdded:Connect(function(player)
-    if player ~= LocalPlayer and espEnabled then
-        player.CharacterAdded:Connect(function()
-            task.wait(0.5)
-            if espEnabled then createESP(player) end
-        end)
-        if espEnabled then
-            task.wait(0.5)
-            if player.Character then createESP(player) end
-        end
-    end
-end)
-
--- Spieler verlassen
-Players.PlayerRemoving:Connect(function(player)
-    removeESP(player)
-end)
-
--- Speed ändern
+-- Speed Funktion
 local function setSpeed(newSpeed)
     speed = math.clamp(newSpeed, 1, 500)
     if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
@@ -146,7 +114,7 @@ local function setSpeed(newSpeed)
     end
 end
 
--- Fly System
+-- Fly Funktionen
 local function startFly()
     flying = true
     local char = LocalPlayer.Character
@@ -155,7 +123,6 @@ local function startFly()
     local rootPart = char:FindFirstChild("HumanoidRootPart")
     if not humanoid or not rootPart then return end
     
-    -- Bodenkontakt ignorieren
     humanoid:SetStateEnabled(Enum.HumanoidStateType.FallingDown, false)
     humanoid:SetStateEnabled(Enum.HumanoidStateType.GettingUp, false)
     humanoid.PlatformStand = true
@@ -170,7 +137,8 @@ local function startFly()
     bg.CFrame = rootPart.CFrame
     
     local moveDirection = Vector3.new()
-    UserInputService.InputBegan:Connect(function(input, gpe)
+    
+    local inputBegan = UserInputService.InputBegan:Connect(function(input, gpe)
         if gpe then return end
         if input.KeyCode == Enum.KeyCode.W then moveDirection = moveDirection + Vector3.new(0, 0, -1) end
         if input.KeyCode == Enum.KeyCode.S then moveDirection = moveDirection + Vector3.new(0, 0, 1) end
@@ -180,7 +148,7 @@ local function startFly()
         if input.KeyCode == Enum.KeyCode.LeftControl then moveDirection = moveDirection + Vector3.new(0, -1, 0) end
     end)
     
-    UserInputService.InputEnded:Connect(function(input, gpe)
+    local inputEnded = UserInputService.InputEnded:Connect(function(input, gpe)
         if input.KeyCode == Enum.KeyCode.W then moveDirection = moveDirection - Vector3.new(0, 0, -1) end
         if input.KeyCode == Enum.KeyCode.S then moveDirection = moveDirection - Vector3.new(0, 0, 1) end
         if input.KeyCode == Enum.KeyCode.A then moveDirection = moveDirection - Vector3.new(-1, 0, 0) end
@@ -189,7 +157,7 @@ local function startFly()
         if input.KeyCode == Enum.KeyCode.LeftControl then moveDirection = moveDirection - Vector3.new(0, -1, 0) end
     end)
     
-    RunService.RenderStepped:Connect(function()
+    local renderStep = RunService.RenderStepped:Connect(function()
         if not flying or not bodyVelocity then return end
         local camCFrame = Camera.CFrame
         local forward = camCFrame.LookVector
@@ -200,6 +168,9 @@ local function startFly()
         bodyVelocity.Velocity = vel
         if bg then bg.CFrame = camCFrame end
     end)
+    
+    -- Connections speichern zum späteren Beenden
+    espObjects["flyConnections"] = {inputBegan, inputEnded, renderStep}
 end
 
 local function stopFly()
@@ -212,6 +183,13 @@ local function stopFly()
     end
     if bodyVelocity then bodyVelocity:Destroy() bodyVelocity = nil end
     if bg then bg:Destroy() bg = nil end
+    
+    if espObjects["flyConnections"] then
+        for _, conn in pairs(espObjects["flyConnections"]) do
+            if conn then conn:Disconnect() end
+        end
+        espObjects["flyConnections"] = nil
+    end
 end
 
 -- Fling Funktion
@@ -231,7 +209,6 @@ local function fling()
     task.wait(0.1)
     flingVelocity:Destroy()
     
-    -- Zusätzlicher Impuls
     local bp = Instance.new("BodyPosition")
     bp.MaxForce = Vector3.new(1, 1, 1) * 100000
     bp.Position = rootPart.Position + Vector3.new(0, 50, 0)
@@ -242,11 +219,12 @@ local function fling()
     flingActive = false
 end
 
--- GUI Erstellung
+-- WICHTIG: Hier wird das Fenster mit der TOGGLE-Taste erstellt
 local Window = Rayfield:CreateWindow({
     Name = "Advanced Script",
     LoadingTitle = "Rayfield Script",
     LoadingSubtitle = "by Developer",
+    ToggleUIKeybind = "K",  -- Drücke K zum Ein-/Ausblenden des GUIs!
     ConfigurationSaving = {
         Enabled = true,
         FolderName = "RayfieldScript",
@@ -258,7 +236,7 @@ local MainTab = Window:CreateTab("Main")
 local VisualsTab = Window:CreateTab("Visuals")
 local MovementTab = Window:CreateTab("Movement")
 
--- Main Tab Buttons
+-- Main Tab
 MainTab:CreateButton({
     Name = "Fling (Explosionssprung)",
     Callback = function()
@@ -267,7 +245,7 @@ MainTab:CreateButton({
 })
 
 MainTab:CreateButton({
-    Name = "Refresh ESP (bei Charakterwechsel)",
+    Name = "Refresh ESP",
     Callback = function()
         refreshESP()
     end,
@@ -284,7 +262,9 @@ VisualsTab:CreateToggle({
             refreshESP()
         else
             for player, _ in pairs(espObjects) do
-                removeESP(player)
+                if player ~= "flyConnections" then
+                    removeESP(player)
+                end
             end
         end
     end
@@ -304,7 +284,7 @@ MovementTab:CreateSlider({
 })
 
 MovementTab:CreateToggle({
-    Name = "Fly Modus (WASD + Leertaste Hoch, Strg Runter)",
+    Name = "Fly Modus",
     CurrentValue = false,
     Flag = "FlyToggle",
     Callback = function(value)
@@ -316,7 +296,7 @@ MovementTab:CreateToggle({
     end
 })
 
--- Automatische Geschwindigkeitsüberwachung (falls Charakter neu)
+-- Events
 LocalPlayer.CharacterAdded:Connect(function(char)
     task.wait(0.5)
     setSpeed(speed)
@@ -327,16 +307,29 @@ LocalPlayer.CharacterAdded:Connect(function(char)
     end
 end)
 
--- ESP für bestehende Spieler
+Players.PlayerAdded:Connect(function(player)
+    if player ~= LocalPlayer and espEnabled then
+        player.CharacterAdded:Connect(function()
+            task.wait(0.5)
+            if espEnabled then createESP(player) end
+        end)
+        task.wait(0.5)
+        if player.Character then createESP(player) end
+    end
+end)
+
+Players.PlayerRemoving:Connect(function(player)
+    removeESP(player)
+end)
+
+-- Initialisierung
 task.wait(1)
 refreshESP()
-
--- Speed anwenden
 setSpeed(100)
 
--- Notifications
+-- Erfolgsmeldung
 Rayfield:Notify({
     Title = "Script geladen",
-    Content = "ESP, Speed (1-500), Fly, Fling aktiv!",
-    Duration = 3
+    Content = "Drücke K zum Öffnen/Schließen des Menüs!",
+    Duration = 5
 })
