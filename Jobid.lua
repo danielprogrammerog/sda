@@ -1,7 +1,10 @@
--- Secure Mode für bessere Kompatibilität
-getgenv().SecureMode = true
+--[[
+    Rayfield Ultra Script - ESP, Speed, Fly, Fling
+    Kompatibel mit: Krnl, Synapse, ScriptWare, Valyse, Fluxus, Electron
+    Toggle UI mit der Taste [K]
+--]]
 
--- Alternative Rayfield-Quelle (funktioniert in fast allen Executoren)
+-- Rayfield Library laden
 local Rayfield = loadstring(game:HttpGet('https://raw.githubusercontent.com/shlexware/Rayfield/main/source'))()
 
 local Players = game:GetService("Players")
@@ -10,17 +13,18 @@ local UserInputService = game:GetService("UserInputService")
 local LocalPlayer = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
 
--- Variablen
+-- ===== VARIABLEN =====
 local speed = 100
 local flying = false
 local flySpeed = 50
 local bodyVelocity = nil
-local bg = nil
+local bodyGyro = nil
 local flingActive = false
 local espEnabled = true
 local espObjects = {}
+local moveDirection = Vector3.new()
 
--- ESP Funktionen (gleich wie vorher)
+-- ===== ESP SYSTEM =====
 local function createESP(player)
     if not player.Character or not player.Character:FindFirstChild("HumanoidRootPart") then return end
     
@@ -30,26 +34,24 @@ local function createESP(player)
     billboard.Size = UDim2.new(0, 200, 0, 50)
     billboard.StudsOffset = Vector3.new(0, 2.5, 0)
     billboard.AlwaysOnTop = true
-    billboard.MaxDistance = 200
+    billboard.MaxDistance = 250
     billboard.Parent = player.Character.HumanoidRootPart
     
     local nameLabel = Instance.new("TextLabel")
-    nameLabel.Name = "NameLabel"
     nameLabel.Size = UDim2.new(1, 0, 0.5, 0)
     nameLabel.BackgroundTransparency = 1
     nameLabel.TextColor3 = Color3.new(1, 1, 1)
-    nameLabel.TextStrokeTransparency = 0.5
+    nameLabel.TextStrokeTransparency = 0.3
     nameLabel.TextScaled = true
     nameLabel.Font = Enum.Font.GothamBold
     nameLabel.Parent = billboard
     
     local healthLabel = Instance.new("TextLabel")
-    healthLabel.Name = "HealthLabel"
     healthLabel.Size = UDim2.new(1, 0, 0.5, 0)
     healthLabel.Position = UDim2.new(0, 0, 0.5, 0)
     healthLabel.BackgroundTransparency = 1
     healthLabel.TextColor3 = Color3.new(0, 1, 0)
-    healthLabel.TextStrokeTransparency = 0.5
+    healthLabel.TextStrokeTransparency = 0.3
     healthLabel.TextScaled = true
     healthLabel.Font = Enum.Font.Gotham
     healthLabel.Parent = billboard
@@ -58,10 +60,11 @@ local function createESP(player)
     
     local function updateESP()
         if not espEnabled or not billboard.Parent then return end
+        
         local rootPart = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
         if rootPart and Camera then
             local distance = (rootPart.Position - Camera.CFrame.Position).Magnitude
-            nameLabel.Text = player.Name .. " [" .. math.floor(distance) .. "m]"
+            nameLabel.Text = player.Name .. "  [" .. math.floor(distance) .. "m]"
         else
             nameLabel.Text = player.Name
         end
@@ -74,7 +77,7 @@ local function createESP(player)
             healthLabel.Text = "❤️ " .. math.floor(health) .. "/" .. maxHealth
             healthLabel.TextColor3 = Color3.new(1 - healthPercent, healthPercent, 0)
         else
-            healthLabel.Text = "❤️ ?"
+            healthLabel.Text = "❤️ Dead"
         end
     end
     
@@ -106,7 +109,7 @@ local function refreshESP()
     end
 end
 
--- Speed Funktion
+-- ===== SPEED SYSTEM =====
 local function setSpeed(newSpeed)
     speed = math.clamp(newSpeed, 1, 500)
     if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
@@ -114,32 +117,38 @@ local function setSpeed(newSpeed)
     end
 end
 
--- Fly Funktionen
+-- ===== FLY SYSTEM =====
 local function startFly()
+    if flying then return end
     flying = true
+    
     local char = LocalPlayer.Character
-    if not char then return end
+    if not char then flying = false return end
+    
     local humanoid = char:FindFirstChild("Humanoid")
     local rootPart = char:FindFirstChild("HumanoidRootPart")
-    if not humanoid or not rootPart then return end
+    if not humanoid or not rootPart then flying = false return end
     
-    humanoid:SetStateEnabled(Enum.HumanoidStateType.FallingDown, false)
-    humanoid:SetStateEnabled(Enum.HumanoidStateType.GettingUp, false)
+    -- PlatformStand aktivieren für bessere Flugkontrolle
     humanoid.PlatformStand = true
     
+    -- BodyVelocity für Bewegung
     bodyVelocity = Instance.new("BodyVelocity")
-    bodyVelocity.MaxForce = Vector3.new(1, 1, 1) * 10000
+    bodyVelocity.MaxForce = Vector3.new(1, 1, 1) * 100000
     bodyVelocity.Parent = rootPart
     
-    bg = Instance.new("BodyGyro")
-    bg.MaxTorque = Vector3.new(1, 1, 1) * 10000
-    bg.Parent = rootPart
-    bg.CFrame = rootPart.CFrame
+    -- BodyGyro für Orientierung
+    bodyGyro = Instance.new("BodyGyro")
+    bodyGyro.MaxTorque = Vector3.new(1, 1, 1) * 100000
+    bodyGyro.Parent = rootPart
+    bodyGyro.CFrame = rootPart.CFrame
     
-    local moveDirection = Vector3.new()
+    moveDirection = Vector3.new()
     
-    local inputBegan = UserInputService.InputBegan:Connect(function(input, gpe)
+    -- Input Handling
+    UserInputService.InputBegan:Connect(function(input, gpe)
         if gpe then return end
+        if not flying then return end
         if input.KeyCode == Enum.KeyCode.W then moveDirection = moveDirection + Vector3.new(0, 0, -1) end
         if input.KeyCode == Enum.KeyCode.S then moveDirection = moveDirection + Vector3.new(0, 0, 1) end
         if input.KeyCode == Enum.KeyCode.A then moveDirection = moveDirection + Vector3.new(-1, 0, 0) end
@@ -148,7 +157,8 @@ local function startFly()
         if input.KeyCode == Enum.KeyCode.LeftControl then moveDirection = moveDirection + Vector3.new(0, -1, 0) end
     end)
     
-    local inputEnded = UserInputService.InputEnded:Connect(function(input, gpe)
+    UserInputService.InputEnded:Connect(function(input, gpe)
+        if not flying then return end
         if input.KeyCode == Enum.KeyCode.W then moveDirection = moveDirection - Vector3.new(0, 0, -1) end
         if input.KeyCode == Enum.KeyCode.S then moveDirection = moveDirection - Vector3.new(0, 0, 1) end
         if input.KeyCode == Enum.KeyCode.A then moveDirection = moveDirection - Vector3.new(-1, 0, 0) end
@@ -157,103 +167,99 @@ local function startFly()
         if input.KeyCode == Enum.KeyCode.LeftControl then moveDirection = moveDirection - Vector3.new(0, -1, 0) end
     end)
     
-    local renderStep = RunService.RenderStepped:Connect(function()
+    -- Bewegung pro Frame
+    RunService.RenderStepped:Connect(function()
         if not flying or not bodyVelocity then return end
         local camCFrame = Camera.CFrame
-        local forward = camCFrame.LookVector
-        local right = camCFrame.RightVector
-        local up = camCFrame.UpVector
-        
-        local vel = (forward * moveDirection.Z + right * moveDirection.X + up * moveDirection.Y) * flySpeed
-        bodyVelocity.Velocity = vel
-        if bg then bg.CFrame = camCFrame end
+        local velocity = (camCFrame.LookVector * moveDirection.Z + 
+                         camCFrame.RightVector * moveDirection.X + 
+                         camCFrame.UpVector * moveDirection.Y) * flySpeed
+        bodyVelocity.Velocity = velocity
+        if bodyGyro then bodyGyro.CFrame = camCFrame end
     end)
-    
-    -- Connections speichern zum späteren Beenden
-    espObjects["flyConnections"] = {inputBegan, inputEnded, renderStep}
 end
 
 local function stopFly()
+    if not flying then return end
     flying = false
+    
     local char = LocalPlayer.Character
     if char and char:FindFirstChild("Humanoid") then
         char.Humanoid.PlatformStand = false
-        char.Humanoid:SetStateEnabled(Enum.HumanoidStateType.FallingDown, true)
-        char.Humanoid:SetStateEnabled(Enum.HumanoidStateType.GettingUp, true)
     end
     if bodyVelocity then bodyVelocity:Destroy() bodyVelocity = nil end
-    if bg then bg:Destroy() bg = nil end
-    
-    if espObjects["flyConnections"] then
-        for _, conn in pairs(espObjects["flyConnections"]) do
-            if conn then conn:Disconnect() end
-        end
-        espObjects["flyConnections"] = nil
-    end
+    if bodyGyro then bodyGyro:Destroy() bodyGyro = nil end
 end
 
--- Fling Funktion
+-- ===== FLING SYSTEM =====
 local function fling()
     if flingActive then return end
     flingActive = true
+    
     local char = LocalPlayer.Character
     if not char then flingActive = false return end
+    
     local rootPart = char:FindFirstChild("HumanoidRootPart")
     if not rootPart then flingActive = false return end
     
-    local flingVelocity = Instance.new("BodyVelocity")
-    flingVelocity.MaxForce = Vector3.new(1, 1, 1) * 100000
-    flingVelocity.Velocity = Vector3.new(0, 150, 0)
-    flingVelocity.Parent = rootPart
+    -- Explosions-Impuls
+    local bv = Instance.new("BodyVelocity")
+    bv.MaxForce = Vector3.new(1, 1, 1) * 1000000
+    bv.Velocity = Vector3.new(0, 250, 0)
+    bv.Parent = rootPart
     
-    task.wait(0.1)
-    flingVelocity:Destroy()
+    task.wait(0.15)
+    bv:Destroy()
     
+    -- Zusätzlicher Schub nach oben
     local bp = Instance.new("BodyPosition")
-    bp.MaxForce = Vector3.new(1, 1, 1) * 100000
-    bp.Position = rootPart.Position + Vector3.new(0, 50, 0)
+    bp.MaxForce = Vector3.new(1, 1, 1) * 1000000
+    bp.Position = rootPart.Position + Vector3.new(0, 80, 0)
     bp.Parent = rootPart
     
-    task.wait(0.3)
+    task.wait(0.25)
     bp:Destroy()
     flingActive = false
 end
 
--- WICHTIG: Hier wird das Fenster mit der TOGGLE-Taste erstellt
+-- ===== GUI ERSTELLEN =====
 local Window = Rayfield:CreateWindow({
-    Name = "Advanced Script",
-    LoadingTitle = "Rayfield Script",
+    Name = "Ultra Script",
+    LoadingTitle = "Rayfield Ultra",
     LoadingSubtitle = "by Developer",
-    ToggleUIKeybind = "K",  -- Drücke K zum Ein-/Ausblenden des GUIs!
+    ToggleUIKeybind = "K",  -- <-- DRÜCKE K ZUM ÖFFNEN!
     ConfigurationSaving = {
         Enabled = true,
-        FolderName = "RayfieldScript",
+        FolderName = "UltraScript",
         FileName = "Settings"
     }
 })
 
+-- Tabs
 local MainTab = Window:CreateTab("Main")
 local VisualsTab = Window:CreateTab("Visuals")
 local MovementTab = Window:CreateTab("Movement")
 
 -- Main Tab
 MainTab:CreateButton({
-    Name = "Fling (Explosionssprung)",
+    Name = "💥 FLING (Explosionssprung)",
     Callback = function()
         fling()
+        Rayfield:Notify({Title = "Fling", Content = "Du wurdest geflingt!", Duration = 2})
     end,
 })
 
 MainTab:CreateButton({
-    Name = "Refresh ESP",
+    Name = "🔄 ESP Neuladen",
     Callback = function()
         refreshESP()
+        Rayfield:Notify({Title = "ESP", Content = "ESP wurde aktualisiert", Duration = 2})
     end,
 })
 
 -- Visuals Tab
 VisualsTab:CreateToggle({
-    Name = "ESP aktivieren",
+    Name = "👁️ ESP aktivieren",
     CurrentValue = espEnabled,
     Flag = "ESPToggle",
     Callback = function(value)
@@ -262,9 +268,7 @@ VisualsTab:CreateToggle({
             refreshESP()
         else
             for player, _ in pairs(espObjects) do
-                if player ~= "flyConnections" then
-                    removeESP(player)
-                end
+                removeESP(player)
             end
         end
     end
@@ -272,31 +276,46 @@ VisualsTab:CreateToggle({
 
 -- Movement Tab
 MovementTab:CreateSlider({
-    Name = "Speed (1-500, Standard 100)",
+    Name = "⚡ Speed (1-500 | Standard 100)",
     Range = {1, 500},
     Increment = 1,
-    Suffix = "Speed",
+    Suffix = "Studs/s",
     CurrentValue = 100,
     Flag = "SpeedSlider",
     Callback = function(value)
         setSpeed(value)
+        Rayfield:Notify({Title = "Speed", Content = "Neue Geschwindigkeit: " .. value, Duration = 1})
     end
 })
 
 MovementTab:CreateToggle({
-    Name = "Fly Modus",
+    Name = "🕊️ Fly Modus",
     CurrentValue = false,
     Flag = "FlyToggle",
     Callback = function(value)
         if value then
             startFly()
+            Rayfield:Notify({Title = "Fly", Content = "Flugmodus AKTIVIERT (WASD + Leertaste/Strg)", Duration = 3})
         else
             stopFly()
+            Rayfield:Notify({Title = "Fly", Content = "Flugmodus DEAKTIVIERT", Duration = 2})
         end
     end
 })
 
--- Events
+MovementTab:CreateSlider({
+    Name = "✈️ Fly-Geschwindigkeit",
+    Range = {20, 200},
+    Increment = 5,
+    Suffix = "Speed",
+    CurrentValue = 50,
+    Flag = "FlySpeedSlider",
+    Callback = function(value)
+        flySpeed = value
+    end
+})
+
+-- ===== EVENT HANDLER =====
 LocalPlayer.CharacterAdded:Connect(function(char)
     task.wait(0.5)
     setSpeed(speed)
@@ -322,14 +341,13 @@ Players.PlayerRemoving:Connect(function(player)
     removeESP(player)
 end)
 
--- Initialisierung
+-- ===== START =====
 task.wait(1)
 refreshESP()
 setSpeed(100)
 
--- Erfolgsmeldung
 Rayfield:Notify({
-    Title = "Script geladen",
-    Content = "Drücke K zum Öffnen/Schließen des Menüs!",
+    Title = "✅ Script geladen!",
+    Content = "Drücke [K] um das Menu zu öffnen!",
     Duration = 5
 })
